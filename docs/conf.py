@@ -10,13 +10,19 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import os
 import sys
 from pathlib import Path
+
+import django
 
 current_dir = Path(__file__).parent.parent
 code_directory = current_dir / "simple_certmanager"
 
 sys.path.insert(0, code_directory)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "testapp.settings")
+
+django.setup()
 
 
 # -- Project information -----------------------------------------------------

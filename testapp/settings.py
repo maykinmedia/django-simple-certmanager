@@ -15,6 +15,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
     "django.contrib.sessions",
+    "django.contrib.messages",
     "django.contrib.admin",
     "simple_certmanager",
     "testapp",
@@ -47,3 +48,4 @@ TEMPLATES = [
 ]
 
 ROOT_URLCONF = "testapp.urls"
+ALLOWED_HOSTS= ['*']
