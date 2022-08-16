@@ -1,0 +1,9 @@
+include *.rst
+include LICENSE
+include simple_certmanager/py.typed
+recursive-include simple_certmanager *.html
+recursive-include simple_certmanager *.txt
+recursive-include simple_certmanager *.po
+global-exclude __pycache__
+global-exclude *.py[co]
+
