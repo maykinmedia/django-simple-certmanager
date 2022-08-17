@@ -9,19 +9,20 @@ Welcome to simple_certmanager's documentation!
 
 |python-versions| |django-versions| |pypi-version|
 
-<One liner describing the project>
+Managing TLS certificates
 
 Features
 ========
 
-* ...
-* ...
+* Manage (mutual) TLS certificates
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    quickstart
+   models
+   commands
 
 
 
@@ -33,28 +34,29 @@ Indices and tables
 * :ref:`search`
 
 
-.. |build-status| image:: https://github.com/maykinmedia/simple_certmanager/workflows/Run%20CI/badge.svg
+.. |build-status| image:: https://github.com/maykinmedia/django-simple-certmanager/workflows/Run%20CI/badge.svg
     :alt: Build status
-    :target: https://github.com/maykinmedia/simple_certmanager/actions?query=workflow%3A%22Run+CI%22
+    :target: https://github.com/maykinmedia/django-simple-certmanager/actions?query=workflow%3A%22Run+CI%22
 
-.. |code-quality| image:: https://github.com/maykinmedia/simple_certmanager/workflows/Code%20quality%20checks/badge.svg
+.. |code-quality| image:: https://github.com/maykinmedia/django-simple-certmanager/workflows/Code%20quality%20checks/badge.svg
      :alt: Code quality checks
-     :target: https://github.com/maykinmedia/simple_certmanager/actions?query=workflow%3A%22Code+quality+checks%22
+     :target: https://github.com/maykinmedia/django-simple-certmanager/actions?query=workflow%3A%22Code+quality+checks%22
 
 .. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
 
-.. |coverage| image:: https://codecov.io/gh/maykinmedia/simple_certmanager/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/maykinmedia/simple_certmanager
+.. |coverage| image:: https://codecov.io/gh/maykinmedia/django-simple-certmanager/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/maykinmedia/django-simple-certmanager
     :alt: Coverage status
 
-.. |docs| image:: https://readthedocs.org/projects/simple_certmanager/badge/?version=latest
-    :target: https://simple_certmanager.readthedocs.io/en/latest/?badge=latest
+.. |docs| image:: https://readthedocs.org/projects/django-simple-certmanager/badge/?version=latest
+    :target: https://django-simple-certmanager.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. |python-versions| image:: https://img.shields.io/pypi/pyversions/simple_certmanager.svg
+.. |python-versions| image:: https://img.shields.io/pypi/pyversions/django-simple-certmanager.svg
 
-.. |django-versions| image:: https://img.shields.io/pypi/djversions/simple_certmanager.svg
+.. |django-versions| image:: https://img.shields.io/pypi/djversions/django-simple-certmanager.svg
 
-.. |pypi-version| image:: https://img.shields.io/pypi/v/simple_certmanager.svg
-    :target: https://pypi.org/project/simple_certmanager/
+.. |pypi-version| image:: https://img.shields.io/pypi/v/django-simple-certmanager.svg
+    :target: https://pypi.org/project/django-simple-certmanager/
+

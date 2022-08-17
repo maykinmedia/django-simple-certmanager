@@ -21,8 +21,7 @@ Managing TLS certificates
 Features
 ========
 
-* ...
-* ...
+* Manage (mutual) TLS certificates
 
 Installation
 ============
@@ -38,15 +37,22 @@ Requirements
 Install
 -------
 
+1. Install from PyPI
+
 .. code-block:: bash
 
     pip install django-simple-certmanager
 
+2. Add ``simple_certmanager`` to the ``INSTALLED_APPS`` setting.
 
-Usage
-=====
+3. Run the migrations
 
-<document or refer to docs>
+.. code-block:: bash
+
+    python manage.py migrate
+
+.. code-block:: bash
+    python src/manage.py migrate
 
 
 .. |build-status| image:: https://github.com/maykinmedia/django-simple-certmanager/workflows/Run%20CI/badge.svg
