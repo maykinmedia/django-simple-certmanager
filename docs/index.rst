@@ -9,21 +9,22 @@ Welcome to simple_certmanager's documentation!
 
 |python-versions| |django-versions| |pypi-version|
 
-Managing TLS certificates
+Manage TLS certificates and keys in the Django admin
 
 Features
 ========
 
 * Manage (mutual) TLS certificates
+* Certificate introspection and validation
+* Certificate/key files stored in private media
+* Certificate/key files deleted when the database record is deleted
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    quickstart
-   models
    commands
-
 
 
 Indices and tables
