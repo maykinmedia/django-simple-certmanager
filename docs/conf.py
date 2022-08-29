@@ -64,7 +64,4 @@ html_theme = "sphinx_rtd_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = []
 
-linkcheck_ignore = [
-    r"https://django-simple-certmanager.readthedocs.io*",
-    r"https://pypi.org/project/django-simple-certmanager/*",
-]
+linkcheck_ignore = []
