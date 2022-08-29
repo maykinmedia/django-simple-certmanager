@@ -38,12 +38,12 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
         upload_to="ssl_certs_keys/%Y/%m/%d",
     )
 
+    _certificate_obj = None
+    _private_key_obj = None
+
     class Meta:
         verbose_name = _("certificate")
         verbose_name_plural = _("certificates")
-
-    _certificate_obj = None
-    _private_key_obj = None
 
     def __str__(self):
         return self.label or gettext("(missing label)")

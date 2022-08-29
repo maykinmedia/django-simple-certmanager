@@ -1,13 +1,14 @@
 Quickstart
 ==========
 
-Installation
+Requirements
 ------------
 
-**Requirements**
-
 * Python 3.7 or newer
-* Django 3.2+
+* Django 3.2 or newer
+
+Installation
+------------
 
 1. Install from PyPI using ``pip``:
 
@@ -25,6 +26,19 @@ Installation
 Usage
 -----
 
-In the Django admin, you can create:
+**Django admin**
 
-* ``Certificate`` instances to (re-)use (mutual) TLS configuration
+In the Django admin, you can create ``Certificate`` instances to (re-)use (mutual) TLS
+configuration.
+
+Whenever an instance is deleted (through the admin or code), the associated files are
+purged as well.
+
+**Programmatically**
+
+The ``Certificate`` model is the public API of the library.
+
+.. autoclass:: simple_certmanager.models.Certificate
+    :members:
+    :undoc-members:
+    :exclude-members: DoesNotExist, MultipleObjectsReturned, clean, save, id, objects

@@ -1,9 +1,8 @@
 
-
 Welcome to django-simple-certmanager's documentation!
 =================================================
 
-:Version: 0.1.0
+:Version: 1.0.0
 :Source: https://github.com/maykinmedia/django-simple-certmanager
 :Keywords: certificates
 :PythonVersion: 3.9
@@ -12,7 +11,7 @@ Welcome to django-simple-certmanager's documentation!
 
 |python-versions| |django-versions| |pypi-version|
 
-Managing TLS certificates
+Manage TLS certificates and keys in the Django admin
 
 .. contents::
 
@@ -22,6 +21,9 @@ Features
 ========
 
 * Manage (mutual) TLS certificates
+* Certificate introspection and validation
+* Certificate/key files stored in private media
+* Certificate/key files deleted when the database record is deleted
 
 Installation
 ============
@@ -31,7 +33,7 @@ Requirements
 
 * Python 3.7 or above
 * setuptools 30.3.0 or above
-* Django 2.2 or newer
+* Django 3.2 or newer
 
 
 Install
@@ -50,9 +52,6 @@ Install
 .. code-block:: bash
 
     python manage.py migrate
-
-.. code-block:: bash
-    python src/manage.py migrate
 
 
 .. |build-status| image:: https://github.com/maykinmedia/django-simple-certmanager/workflows/Run%20CI/badge.svg
