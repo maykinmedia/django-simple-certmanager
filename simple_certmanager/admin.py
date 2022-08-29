@@ -18,12 +18,11 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
 
     private_media_fields = ("public_certificate", "private_key")
 
+    @admin.display(description=_("label"), ordering="label")
     def get_label(self, obj):
         return str(obj)
 
-    get_label.short_description = _("label")
-    get_label.admin_order_field = "label"
-
+    @admin.display(description=_("expiry date"))
     def expiry_date(self, obj=None):
         # alias model property to catch file not found errors
         try:
@@ -31,14 +30,10 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
         except FileNotFoundError:
             return _("file not found")
 
-    expiry_date.short_description = _("expiry date")
-
+    @admin.display(description=_("valid key pair"), boolean=True)
     def is_valid_key_pair(self, obj=None):
         # alias model method to catch file not found errors
         try:
             return obj.is_valid_key_pair()
         except FileNotFoundError:
             return None
-
-    is_valid_key_pair.short_description = _("valid key pair")
-    is_valid_key_pair.boolean = True
