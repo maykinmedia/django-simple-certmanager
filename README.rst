@@ -1,6 +1,5 @@
-
-Welcome to django-simple-certmanager's documentation!
-=================================================
+django-simple-certmanager
+=========================
 
 :Version: 1.0.0
 :Source: https://github.com/maykinmedia/django-simple-certmanager
