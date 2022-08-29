@@ -16,10 +16,8 @@ from pathlib import Path
 
 import django
 
-current_dir = Path(__file__).parent.parent
-code_directory = current_dir / "simple_certmanager"
-
-sys.path.insert(0, code_directory)
+_root_dir = Path(__file__).parent.parent.resolve()
+sys.path.insert(0, str(_root_dir))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "testapp.settings")
 
 django.setup()
