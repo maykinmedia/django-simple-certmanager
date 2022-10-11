@@ -36,6 +36,7 @@ class CertificateTests(TestCase):
         self.assertEqual(
             "C: NL, ST: Some-State, O: Internet Widgits Pty Ltd", certificate.subject
         )
+        self.assertRegex(certificate.serial_number, r"[0-9A-F]{2}(?::[0-9A-F]{2}){15}")
 
     def test_admin_validation_invalid_certificate(self):
         with open(TEST_FILES / "invalid.certificate", "r") as client_certificate_f:

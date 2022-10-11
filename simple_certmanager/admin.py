@@ -14,6 +14,7 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     fields = ("label", "type", "public_certificate", "private_key")
     list_display = (
         "get_label",
+        "serial_number",
         "type",
         "expiry_date",
         "is_valid_key_pair",
@@ -27,6 +28,14 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     @admin.display(description=_("label"), ordering="label")
     def get_label(self, obj):
         return str(obj)
+
+    @admin.display(description=_("serial number"))
+    def serial_number(self, obj=None):
+        # alias model property to catch file not found errors
+        try:
+            return obj.serial_number
+        except FileNotFoundError:
+            return None
 
     @admin.display(description=_("expiry date"))
     def expiry_date(self, obj=None):
