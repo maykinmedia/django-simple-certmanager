@@ -11,7 +11,7 @@ from .models import Certificate
 class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     form = CertificateAdminForm
 
-    fields = ("label", "type", "public_certificate", "private_key")
+    fields = ("label", "serial_number", "type", "public_certificate", "private_key")
     list_display = (
         "get_label",
         "serial_number",
@@ -22,6 +22,7 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     )
     list_filter = ("label", "type")
     search_fields = ("label", "type")
+    readonly_fields = ("serial_number",)
 
     private_media_fields = ("public_certificate", "private_key")
 
