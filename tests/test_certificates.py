@@ -54,7 +54,7 @@ class CertificateTests(TestCase):
         with open(TEST_FILES / "test.certificate", "r") as client_certificate_f:
             form = CertificateAdminForm(
                 {
-                    "label": "Test invalid certificate",
+                    "label": "Test valid certificate",
                     "type": CertificateTypes.cert_only,
                 },
                 {"public_certificate": File(client_certificate_f)},
