@@ -9,7 +9,7 @@ from privates.fields import PrivateMediaFileField
 
 from .constants import CertificateTypes
 from .mixins import DeleteFileFieldFilesMixin
-from .utils import pretty_print_certificate_components
+from .utils import check_pem, pretty_print_certificate_components
 
 
 class Certificate(DeleteFileFieldFilesMixin, models.Model):
@@ -97,3 +97,9 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
         return True
 
     is_valid_key_pair.boolean = True
+
+    def has_valid_chain(self) -> Optional[bool]:
+        with self.public_certificate.open(mode="rb") as f:
+            return check_pem(f.read())
+
+    has_valid_chain.boolean = True
