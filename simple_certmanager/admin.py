@@ -12,7 +12,13 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     form = CertificateAdminForm
 
     fields = ("label", "type", "public_certificate", "private_key")
-    list_display = ("get_label", "type", "expiry_date", "is_valid_key_pair")
+    list_display = (
+        "get_label",
+        "type",
+        "expiry_date",
+        "is_valid_key_pair",
+        "has_valid_chain",
+    )
     list_filter = ("label", "type")
     search_fields = ("label", "type")
 
@@ -35,5 +41,12 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
         # alias model method to catch file not found errors
         try:
             return obj.is_valid_key_pair()
+        except FileNotFoundError:
+            return None
+
+    @admin.display(description=_("valid chain"), boolean=True)
+    def has_valid_chain(self, obj: Certificate):
+        try:
+            return obj.has_valid_chain()
         except FileNotFoundError:
             return None
