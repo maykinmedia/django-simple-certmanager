@@ -24,6 +24,7 @@ Features
 * Certificate/key files stored in private media
 * Certificate/key files deleted when the database record is deleted
 
+
 Installation
 ============
 
@@ -38,19 +39,48 @@ Requirements
 Install
 -------
 
-1. Install from PyPI
+You can install **Django Simple Certmanager** either via the Python Package 
+Index (PyPI) or from source.
+
+To install using ``pip``:
 
 .. code-block:: bash
 
     pip install django-simple-certmanager
 
-2. Add ``simple_certmanager`` to the ``INSTALLED_APPS`` setting.
 
-3. Run the migrations
+Usage
+=====
+
+To use this with your project you need to follow these steps:
+
+#. Add **Django Simple Certmanager** to ``INSTALLED_APPS`` in your Django 
+   project's ``settings.py``:
+
+   .. code-block:: python
+
+      INSTALLED_APPS = (
+          # ...,
+          "privates",  # Needed for admin usage.
+          "simple_certmanager"
+      )
+
+#. Make sure you configure `Django Privates`_ correctly and set the (currently)
+   undocumented settings:
+
+   .. code-block:: python
+
+      PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR, "private-media")
+      PRIVATE_MEDIA_URL = "/private-media/"
+
+#. Run the migrations
 
 .. code-block:: bash
 
     python manage.py migrate
+
+
+.. _`Django Privates`: https://pypi.org/project/django-privates/
 
 
 .. |build-status| image:: https://github.com/maykinmedia/django-simple-certmanager/workflows/Run%20CI/badge.svg
