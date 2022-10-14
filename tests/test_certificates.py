@@ -38,6 +38,10 @@ class CertificateTests(TestCase):
         )
         self.assertRegex(certificate.serial_number, r"[0-9A-F]{2}(?::[0-9A-F]{2}){15}")
 
+    def test_creating_empty_admin_detail(self):
+        form = CertificateAdminForm()
+        self.assertInHTML("Serial number:", form.as_p())
+
     def test_admin_detail_contains_serial_number(self):
         with open(TEST_FILES / "test.certificate", "r") as client_certificate_f:
             form = CertificateAdminForm(
