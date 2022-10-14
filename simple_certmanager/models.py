@@ -81,6 +81,13 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
         subject_x509name = self._certificate.get_subject()
         return pretty_print_certificate_components(subject_x509name)
 
+    @property
+    def serial_number(self) -> str:
+        x509sn: int = self._certificate.get_serial_number()
+        sn: str = hex(x509sn)[2:].upper()
+        bytes = (sn[i : i + 2] for i in range(0, len(sn), 2))
+        return ":".join(bytes)
+
     def is_valid_key_pair(self) -> Optional[bool]:
         if not self.private_key:
             return None

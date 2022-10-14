@@ -11,9 +11,10 @@ from .models import Certificate
 class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     form = CertificateAdminForm
 
-    fields = ("label", "type", "public_certificate", "private_key")
+    fields = ("label", "serial_number", "type", "public_certificate", "private_key")
     list_display = (
         "get_label",
+        "serial_number",
         "type",
         "expiry_date",
         "is_valid_key_pair",
@@ -21,12 +22,21 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     )
     list_filter = ("label", "type")
     search_fields = ("label", "type")
+    readonly_fields = ("serial_number",)
 
     private_media_fields = ("public_certificate", "private_key")
 
     @admin.display(description=_("label"), ordering="label")
     def get_label(self, obj):
         return str(obj)
+
+    @admin.display(description=_("serial number"))
+    def serial_number(self, obj=None):
+        # alias model property to catch file not found errors
+        try:
+            return obj.serial_number
+        except FileNotFoundError:
+            return None
 
     @admin.display(description=_("expiry date"))
     def expiry_date(self, obj=None):

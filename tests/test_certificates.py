@@ -36,6 +36,23 @@ class CertificateTests(TestCase):
         self.assertEqual(
             "C: NL, ST: Some-State, O: Internet Widgits Pty Ltd", certificate.subject
         )
+        self.assertRegex(certificate.serial_number, r"[0-9A-F]{2}(?::[0-9A-F]{2}){15}")
+
+    def test_creating_empty_admin_detail(self):
+        form = CertificateAdminForm()
+        self.assertInHTML("Serial number:", form.as_p())
+
+    def test_admin_detail_contains_serial_number(self):
+        with open(TEST_FILES / "test.certificate", "r") as client_certificate_f:
+            form = CertificateAdminForm(
+                {
+                    "label": "Test valid certificate",
+                    "type": CertificateTypes.cert_only,
+                },
+                {"public_certificate": File(client_certificate_f)},
+            )
+
+        self.assertInHTML("Serial number:", form.as_p())
 
     def test_admin_validation_invalid_certificate(self):
         with open(TEST_FILES / "invalid.certificate", "r") as client_certificate_f:
@@ -53,7 +70,7 @@ class CertificateTests(TestCase):
         with open(TEST_FILES / "test.certificate", "r") as client_certificate_f:
             form = CertificateAdminForm(
                 {
-                    "label": "Test invalid certificate",
+                    "label": "Test valid certificate",
                     "type": CertificateTypes.cert_only,
                 },
                 {"public_certificate": File(client_certificate_f)},

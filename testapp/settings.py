@@ -49,3 +49,4 @@ TEMPLATES = [
 
 ROOT_URLCONF = "testapp.urls"
 ALLOWED_HOSTS = ["*"]
+USE_TZ = True
