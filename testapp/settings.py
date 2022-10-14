@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.admin",
     "simple_certmanager",
+    "privates",
     "testapp",
 ]
 
@@ -50,3 +51,14 @@ TEMPLATES = [
 ROOT_URLCONF = "testapp.urls"
 ALLOWED_HOSTS = ["*"]
 USE_TZ = True
+
+DEBUG = True
+
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_URL = "/media/"
+
+PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR, "private-media")
+PRIVATE_MEDIA_URL = "/private-media/"
