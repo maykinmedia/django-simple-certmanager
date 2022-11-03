@@ -2,6 +2,14 @@
 Changelog
 =========
 
+1.1.1
+=====
+
+*November 3, 2022*
+
+* Fixed typo in dependencies
+* Pinned minimum required versions for the 1.1.0 features to reliably work
+
 1.1.0
 =====
 
