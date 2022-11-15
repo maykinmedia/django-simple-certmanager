@@ -42,6 +42,23 @@ class CertificateTests(TestCase):
         form = CertificateAdminForm()
         self.assertInHTML("Serial number:", form.as_p())
 
+    def test_creating_valid_key_pair(self):
+        with open(TEST_FILES / "test.certificate", "r") as client_certificate_f, open(
+            TEST_FILES / "test.key", "r"
+        ) as key_f:
+            form = CertificateAdminForm(
+                data={
+                    "label": "Test valid pair",
+                    "type": CertificateTypes.key_pair,
+                },
+                files={
+                    "public_certificate": File(client_certificate_f),
+                    "private_key": File(key_f),
+                },
+                instance=None,
+            )
+        self.assertTrue(form.is_valid())
+
     def test_admin_detail_contains_serial_number(self):
         with open(TEST_FILES / "test.certificate", "r") as client_certificate_f:
             form = CertificateAdminForm(
