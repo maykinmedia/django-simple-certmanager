@@ -2,6 +2,13 @@
 Changelog
 =========
 
+1.1.2
+=====
+
+*November 15, 2022*
+
+* Fix AttributeError on adding a new certificate
+
 1.1.1
 =====
 
