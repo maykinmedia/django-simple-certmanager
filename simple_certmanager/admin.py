@@ -25,6 +25,7 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     readonly_fields = ("serial_number",)
 
     private_media_fields = ("public_certificate", "private_key")
+    private_media_no_download_fields = ("private_key",)
 
     @admin.display(description=_("label"), ordering="label")
     def get_label(self, obj):
