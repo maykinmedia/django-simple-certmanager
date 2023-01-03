@@ -1,9 +1,14 @@
+import logging
 from os import PathLike
 from typing import Generator, Optional, Union
+
+from django.utils.translation import gettext_lazy as _
 
 import certifi
 from cryptography import x509
 from OpenSSL import crypto
+
+logger = logging.getLogger(__name__)
 
 
 def pretty_print_certificate_components(x509name) -> str:
@@ -58,3 +63,19 @@ def check_pem(
         return False
     else:
         return True
+
+
+def crypto_check(func):
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except crypto.Error:
+            certificate = args[1]
+            logger.warning(_("invalid certificate: %s"), certificate.label)
+            return None
+        except ValueError:
+            certificate = args[1]
+            logger.warning(_("invalid certificate: %s"), certificate.label)
+            return None
+
+    return wrapper

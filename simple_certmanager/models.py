@@ -10,6 +10,7 @@ from privates.fields import PrivateMediaFileField
 from .constants import CertificateTypes
 from .mixins import DeleteFileFieldFilesMixin
 from .utils import check_pem, pretty_print_certificate_components
+from .validators import PrivateKeyValidator, PublicCertValidator
 
 
 class Certificate(DeleteFileFieldFilesMixin, models.Model):
@@ -30,12 +31,14 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
         _("public certificate"),
         help_text=_("The content of the certificate"),
         upload_to="ssl_certs_keys/%Y/%m/%d",
+        validators=[PublicCertValidator()],
     )
     private_key = PrivateMediaFileField(
         _("private key"),
         help_text=_("The content of the private key"),
         blank=True,
         upload_to="ssl_certs_keys/%Y/%m/%d",
+        validators=[PrivateKeyValidator()],
     )
 
     _certificate_obj = None

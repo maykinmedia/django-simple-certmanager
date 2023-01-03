@@ -159,6 +159,27 @@ class CertificateTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
 
+    def test_invalid_private_key(self):
+        """Assert that invalid private keys cannot be uploaded
+
+        The test file contains a valid public cert, which is invalid when used
+        as a private key."""
+
+        with open(TEST_FILES / "test.certificate", "r") as cert:
+            form = CertificateAdminForm(
+                {
+                    "label": "Test invalid private key",
+                    "type": CertificateTypes.key_pair,
+                },
+                {
+                    "public_certificate": File(cert),
+                    "private_key": File(cert),
+                },
+            )
+
+        self.assertEqual(len(form.errors), 1)
+        self.assertIsNotNone(form.errors["private_key"])
+
 
 @temp_private_root()
 class TestCertificateFilesDeletion(TransactionTestCase):
