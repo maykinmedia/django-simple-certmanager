@@ -148,6 +148,16 @@ def root_ca_path(root_cert, tmp_path_factory) -> Path:
     return cert_path
 
 
+@pytest.fixture
+def temp_private_root(tmp_path, settings):
+    tmpdir = tmp_path / "private-media"
+    tmpdir.mkdir()
+    location = str(tmpdir)
+    settings.PRIVATE_MEDIA_ROOT = location
+    settings.SENDFILE_ROOT = location
+    return settings
+
+
 def mkcert(subject, subject_key, issuer=None, issuer_key=None, can_issue=True):
     cert = (
         x509.CertificateBuilder()

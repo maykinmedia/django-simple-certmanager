@@ -36,7 +36,7 @@ class log_failed_deletes:
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         instance = self.filefield.instance
-        if exc_value:
+        if exc_value:  # pragma: no cover
             logger.warning(
                 "File delete on model %r (pk=%s, field=%s, path=%s) failed: %s",
                 type(instance),
