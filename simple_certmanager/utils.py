@@ -1,9 +1,13 @@
+import logging
+from functools import wraps
 from os import PathLike
-from typing import Generator, Optional, Union
+from typing import Any, Generator, Optional, Union
 
 import certifi
 from cryptography import x509
 from OpenSSL import crypto
+
+logger = logging.getLogger(__name__)
 
 
 def pretty_print_certificate_components(x509name) -> str:
@@ -58,3 +62,22 @@ def check_pem(
         return False
     else:
         return True
+
+
+def suppress_crypto_errors(func):
+    """
+    Decorator to suppress exceptions thrown while processing PKI data.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs) -> Optional[Any]:
+        try:
+            return func(*args, **kwargs)
+        except (crypto.Error, ValueError) as exc:
+            logger.warning(
+                "Suppressed exception while attempting to process PKI data",
+                exc_info=exc,
+            )
+            return None
+
+    return wrapper
