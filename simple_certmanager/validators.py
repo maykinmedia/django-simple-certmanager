@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from OpenSSL import crypto
 
 
-class AbstractSSLValidator:
+class PKIValidatorBase:
     message = _("Invalid file provided")
     code = "invalid_pem"
 
@@ -22,7 +22,7 @@ class AbstractSSLValidator:
             raise ValidationError(self.message, code=self.code)
 
 
-class PublicCertValidator(AbstractSSLValidator):
+class PublicCertValidator(PKIValidatorBase):
     message = _("Invalid file provided, expected a certificate in PEM format")
 
     @staticmethod
@@ -30,7 +30,7 @@ class PublicCertValidator(AbstractSSLValidator):
         return crypto.load_certificate(crypto.FILETYPE_PEM, file_content)
 
 
-class PrivateKeyValidator(AbstractSSLValidator):
+class PrivateKeyValidator(PKIValidatorBase):
     message = _("Invalid file provided, expected a private key in PEM format")
 
     @staticmethod

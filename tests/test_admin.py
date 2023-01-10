@@ -110,7 +110,7 @@ class AdminTests(TestCase):
         """Assert that `changelist_view` works if DB contains a corrupted public cert"""
 
         with open(TEST_FILES / "invalid.certificate", "r") as client_certificate_f:
-            certificate = Certificate.objects.create(
+            Certificate.objects.create(
                 label="Test certificate",
                 type=CertificateTypes.cert_only,
                 public_certificate=File(
@@ -133,10 +133,11 @@ class AdminTests(TestCase):
 
             self.assertEqual(response.status_code, 200)
 
-            expected_log_msg = _("invalid certificate: %s") % certificate.label
-            self.assertEqual(
-                logs.output[0], "WARNING:simple_certmanager.utils:%s" % expected_log_msg
+            expected_log_msg = (
+                "Suppressed exception while attempting to process PKI data"
             )
+            log_msg_lead = f"WARNING:simple_certmanager.utils:{expected_log_msg}"
+            self.assertTrue(logs.output[0].startswith(log_msg_lead))
 
     def test_list_view_invalid_private_key(self):
         """Assert that `changelist_view` works if DB contains a corrupted private key"""
@@ -144,7 +145,7 @@ class AdminTests(TestCase):
         with open(TEST_FILES / "test.certificate", "r") as client_certificate_f, open(
             TEST_FILES / "invalid.certificate", "r"
         ) as key_f:
-            certificate = Certificate.objects.create(
+            Certificate.objects.create(
                 label="Test certificate",
                 type=CertificateTypes.key_pair,
                 public_certificate=File(
@@ -168,10 +169,11 @@ class AdminTests(TestCase):
 
             self.assertEqual(response.status_code, 200)
 
-            expected_log_msg = _("invalid certificate: %s") % certificate.label
-            self.assertEqual(
-                logs.output[0], "WARNING:simple_certmanager.utils:%s" % expected_log_msg
+            expected_log_msg = (
+                "Suppressed exception while attempting to process PKI data"
             )
+            log_msg_lead = f"WARNING:simple_certmanager.utils:{expected_log_msg}"
+            self.assertTrue(logs.output[0].startswith(log_msg_lead))
 
     @expectedFailure
     def test_detail_view_invalid_public_cert(self):

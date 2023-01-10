@@ -1,8 +1,7 @@
 import logging
+from functools import wraps
 from os import PathLike
-from typing import Generator, Optional, Union
-
-from django.utils.translation import gettext_lazy as _
+from typing import Any, Generator, Optional, Union
 
 import certifi
 from cryptography import x509
@@ -65,17 +64,20 @@ def check_pem(
         return True
 
 
-def crypto_check(func):
-    def wrapper(*args, **kwargs):
+def suppress_crypto_errors(func):
+    """
+    Decorator to suppress exceptions thrown while processing PKI data.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs) -> Optional[Any]:
         try:
-            func(*args, **kwargs)
-        except crypto.Error:
-            certificate = args[1]
-            logger.warning(_("invalid certificate: %s"), certificate.label)
-            return None
-        except ValueError:
-            certificate = args[1]
-            logger.warning(_("invalid certificate: %s"), certificate.label)
+            return func(*args, **kwargs)
+        except (crypto.Error, ValueError) as exc:
+            logger.warning(
+                "Suppressed exception while attempting to process PKI data",
+                exc_info=exc,
+            )
             return None
 
     return wrapper
