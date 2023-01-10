@@ -2,6 +2,16 @@
 Changelog
 =========
 
+1.2.0
+=====
+
+*January 10, 2023*
+
+* The admin now prevents downloading the private keys
+* The admin is now more robust on corrupt certificates/keys, allowing users to correct
+  the bad data/files.
+* Started refactoring the unittest-based tests into pytest style
+
 1.1.2
 =====
 
