@@ -2,6 +2,16 @@
 Changelog
 =========
 
+1.3.0
+=====
+
+*February 16, 2023*
+
+* Fixed bug in 1.2.0 due to field validator not being deconstructible
+* Format with latest black version
+* Confirmed support for Django 4.1
+* Dropped django-choices dependency
+
 1.2.0
 =====
 
