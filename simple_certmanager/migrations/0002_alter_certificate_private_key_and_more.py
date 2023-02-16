@@ -9,7 +9,6 @@ import simple_certmanager.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("simple_certmanager", "0001_initial"),
     ]
@@ -23,7 +22,7 @@ class Migration(migrations.Migration):
                 help_text="The content of the private key",
                 storage=privates.storages.PrivateMediaFileSystemStorage(),
                 upload_to="ssl_certs_keys/%Y/%m/%d",
-                validators=[simple_certmanager.validators.PrivateKeyValidator],
+                validators=[simple_certmanager.validators.PrivateKeyValidator()],
                 verbose_name="private key",
             ),
         ),
@@ -34,7 +33,7 @@ class Migration(migrations.Migration):
                 help_text="The content of the certificate",
                 storage=privates.storages.PrivateMediaFileSystemStorage(),
                 upload_to="ssl_certs_keys/%Y/%m/%d",
-                validators=[simple_certmanager.validators.PublicCertValidator],
+                validators=[simple_certmanager.validators.PublicCertValidator()],
                 verbose_name="public certificate",
             ),
         ),
