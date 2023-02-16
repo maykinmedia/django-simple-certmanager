@@ -9,7 +9,6 @@ import simple_certmanager.mixins
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []

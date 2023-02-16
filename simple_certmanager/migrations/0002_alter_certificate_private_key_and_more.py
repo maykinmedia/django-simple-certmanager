@@ -9,7 +9,6 @@ import simple_certmanager.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("simple_certmanager", "0001_initial"),
     ]
