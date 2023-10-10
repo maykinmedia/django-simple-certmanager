@@ -2,6 +2,13 @@
 Changelog
 =========
 
+1.4.1
+=====
+
+*October 10, 2023*
+
+* Update Manifest to include certificates
+
 1.4.0
 =====
 
