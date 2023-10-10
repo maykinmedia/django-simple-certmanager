@@ -4,6 +4,6 @@ include simple_certmanager/py.typed
 recursive-include simple_certmanager *.html
 recursive-include simple_certmanager *.txt
 recursive-include simple_certmanager *.po
+recursive-include simple_certmanager/test/data/ *.*
 global-exclude __pycache__
 global-exclude *.py[co]
-
