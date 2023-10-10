@@ -2,6 +2,13 @@
 Changelog
 =========
 
+1.4.0
+=====
+
+*October 10, 2023*
+
+* Add factory to ``test`` module
+
 1.3.0
 =====
 
