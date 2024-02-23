@@ -2,6 +2,17 @@
 Changelog
 =========
 
+2.0.0
+=====
+
+*February 23, 2024*
+
+* Dropped support for Python versions older than 3.10
+* Dropped support for Django 4.1
+* Confirmed support for Python 3.11 and 3.11
+* Confirmed support for Django 4.2
+* ...
+
 1.4.1
 =====
 

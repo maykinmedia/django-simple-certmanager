@@ -15,34 +15,35 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9', '3.10']
-        django: ['3.2', '4.1']
+        python: ['3.10', '3.11', '3.12']
+        django: ['3.2', '4.2']
         exclude:
-          - python: '3.7'
-            django: '4.1'
+          - python: '3.11'
+            django: '3.2'
+          - python: '3.12'
+            django: '3.2'
 
     name: Run the test suite (Python ${{ matrix.python }}, Django ${{ matrix.django }})
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
 
       - name: Install dependencies
-        run: pip install tox tox-gh-actions codecov
+        run: pip install tox tox-gh-actions
 
       - name: Run tests
-        run: |
-          export TOXENV=py${PYTHON_VERSION/./}-django${DJANGO/./}
-          tox
-          codecov -e TOXENV,DJANGO --file reports/coverage-${TOXENV}.xml
+        run: tox
         env:
           PYTHON_VERSION: ${{ matrix.python }}
           DJANGO: ${{ matrix.django }}
 
       - name: Publish coverage report
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   publish:
     name: Publish package to PyPI
@@ -53,7 +54,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -63,7 +64,7 @@ jobs:
           python setup.py sdist bdist_wheel
 
       - name: Publish a Python distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.1
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
