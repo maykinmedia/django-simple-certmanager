@@ -27,6 +27,26 @@ def pretty_print_certificate_components(x509name: x509.Name) -> str:
     return ", ".join(bits)
 
 
+def extract_dns_names(
+    certificate: x509.Certificate, allow_empty: bool = False
+) -> list[str]:
+    # SubjectAlternativeNames extension is required
+    try:
+        san_extension = certificate.extensions.get_extension_for_oid(
+            x509.OID_SUBJECT_ALTERNATIVE_NAME
+        ).value
+        assert isinstance(san_extension, x509.SubjectAlternativeName)
+    except x509.ExtensionNotFound as exc:
+        raise ValueError(
+            "Certificate is missing the SubjectAlternativeName extension."
+        ) from exc
+
+    dns_names = san_extension.get_values_for_type(x509.DNSName)
+    if not dns_names:
+        raise ValueError("Certificate does not have any DNSName entries.")
+    return dns_names
+
+
 def check_pem(pem: bytes, ca: str | Path = certifi.where()) -> bool:
     """Simple (possibly incomplete) sanity check on pem chain.
 
@@ -44,7 +64,8 @@ def check_pem(pem: bytes, ca: str | Path = certifi.where()) -> bool:
 
     .. todo: The default for ``ca`` should probably support a setting so that
        self_certifi paths/dirs can be taken into account, or maybe consider the envvar
-       ``REQUESTS_CA_BUNDLE``. This will make it possible to support the G1 Private root.
+       ``REQUESTS_CA_BUNDLE``. This will make it possible to support the G1 Private
+       root.
     """
     # normalize to Path
     if isinstance(ca, str):
@@ -59,27 +80,34 @@ def check_pem(pem: bytes, ca: str | Path = certifi.where()) -> bool:
     # extract the DNS name from the leaf certificate - we don't really care about the
     # exact host name for the chain validation since we don't know which hosts will be
     # connected to with this certificate - that only happens at runtime. So, we use the
-    # first entry.
-    # XXX: this can crash if the SAN extension is not present or no DNS names are
-    # specified - it's unclear if those are situations we need to support or not.
-    # Probably the validation of the (leaf) certificate itself should enforce the
-    # presence of this information.
-    san_extension = leaf.extensions.get_extension_for_oid(
-        x509.OID_SUBJECT_ALTERNATIVE_NAME
-    ).value
-    assert isinstance(san_extension, x509.SubjectAlternativeName)
-    dns_names = san_extension.get_values_for_type(x509.DNSName)
+    # first available entry.
+    try:
+        dns_names = extract_dns_names(leaf)
+    except ValueError as exc:
+        # ValueError: Certificate is missing the SubjectAlternativeName extension
+        logger.info(
+            "Could not extract DNS name from (leaf) certificate data (got error %r)",
+            exc,
+            exc_info=exc,
+        )
+        return False
+
     dns_name = x509.DNSName(dns_names[0])
     verifier = builder.build_server_verifier(dns_name)
 
     try:
         verifier.verify(leaf, intermediates)
         return True
-    except VerificationError:
+    except VerificationError as exc:
+        logger.info(
+            "Invalid certificate chain detected, verification error is: %r",
+            exc,
+            exc_info=exc,
+        )
         return False
 
 
-def suppress_crypto_errors(func):
+def suppress_cryptography_errors(func):
     """
     Decorator to suppress exceptions thrown while processing PKI data.
     """

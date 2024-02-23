@@ -104,7 +104,16 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
     is_valid_key_pair.boolean = True  # type: ignore
 
     def has_valid_chain(self) -> None | bool:
+        # if we have a public cert / private key combination, then this is *most likely*
+        # used for client authentication in an mTLS context. A client cert does not have
+        # a DNSName, so validating the certificate chain does not make any sense. We
+        # only require server certificate validation. There is no reason why we would
+        # have the private key of a server we're talking to.
+        if self.type != CertificateTypes.cert_only:
+            return None
+
         with self.public_certificate.open(mode="rb") as f:
-            return check_pem(f.read())
+            cert_data: bytes = f.read()
+            return check_pem(cert_data)
 
     has_valid_chain.boolean = True  # type: ignore
