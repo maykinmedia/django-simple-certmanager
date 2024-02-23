@@ -1,12 +1,12 @@
 import logging
 from functools import wraps
-from os import PathLike
-from typing import Any, Generator, Optional, Union
+from pathlib import Path
+from typing import Any, Optional
 
 import certifi
 from cryptography import x509
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
-from OpenSSL import crypto
+from cryptography.x509.verification import PolicyBuilder, Store, VerificationError
 
 logger = logging.getLogger(__name__)
 
@@ -27,53 +27,56 @@ def pretty_print_certificate_components(x509name: x509.Name) -> str:
     return ", ".join(bits)
 
 
-def split_pem(pem: bytes) -> Generator[bytes, None, None]:
-    "Split a concatenated pem into its constituent parts"
-    mark = b"-----END CERTIFICATE-----"
-    if mark not in pem:
-        return
-    end = pem.find(mark) + len(mark)
-    yield pem[:end]
-    yield from split_pem(pem[end:])
-
-
-def load_pem_chain(pem: bytes) -> Generator[x509.Certificate, None, None]:
-    for data in split_pem(pem):
-        yield x509.load_pem_x509_certificate(data)
-
-
-def check_pem(
-    pem: bytes,
-    ca: Union[bytes, str, PathLike] = certifi.where(),
-    ca_path: Optional[Union[str, PathLike]] = None,
-) -> bool:
+def check_pem(pem: bytes, ca: str | Path = certifi.where()) -> bool:
     """Simple (possibly incomplete) sanity check on pem chain.
 
     If the pam passes this check it MAY be valid for use. This is only intended
     to catch blatant misconfigurations early. This gives NO guarantees on
     security nor authenticity.
 
+    Relevant documentation: https://cryptography.io/en/stable/x509/verification/
+
     See all the context in the upstream issue:
     https://github.com/pyca/cryptography/issues/2381
+
+    :arg pem: a certificate or chain of certificates in PEM format.
+    :arg ca: path to the root Certificate Authority bundle.
+
+    .. todo: The default for ``ca`` should probably support a setting so that
+       self_certifi paths/dirs can be taken into account, or maybe consider the envvar
+       ``REQUESTS_CA_BUNDLE``. This will make it possible to support the G1 Private root.
     """
-    # We need still need to use pyOpenSSL primitives for this:
-    # https://github.com/pyca/cryptography/issues/6229
-    # https://github.com/pyca/cryptography/issues/2381
+    # normalize to Path
+    if isinstance(ca, str):
+        ca = Path(ca)
 
-    # Establish roots
-    store = crypto.X509Store()
-    store.load_locations(ca, ca_path)
+    [leaf, *intermediates] = x509.load_pem_x509_certificates(pem)
+    root_certificates = x509.load_pem_x509_certificates(ca.read_bytes())
 
-    leaf, *chain = map(crypto.X509.from_cryptography, load_pem_chain(pem))
+    store = Store(root_certificates)
+    builder = PolicyBuilder().store(store)
 
-    # Create a context
-    ctx = crypto.X509StoreContext(store, leaf, chain)
+    # extract the DNS name from the leaf certificate - we don't really care about the
+    # exact host name for the chain validation since we don't know which hosts will be
+    # connected to with this certificate - that only happens at runtime. So, we use the
+    # first entry.
+    # XXX: this can crash if the SAN extension is not present or no DNS names are
+    # specified - it's unclear if those are situations we need to support or not.
+    # Probably the validation of the (leaf) certificate itself should enforce the
+    # presence of this information.
+    san_extension = leaf.extensions.get_extension_for_oid(
+        x509.OID_SUBJECT_ALTERNATIVE_NAME
+    ).value
+    assert isinstance(san_extension, x509.SubjectAlternativeName)
+    dns_names = san_extension.get_values_for_type(x509.DNSName)
+    dns_name = x509.DNSName(dns_names[0])
+    verifier = builder.build_server_verifier(dns_name)
+
     try:
-        ctx.verify_certificate()
-    except crypto.X509StoreContextError:
-        return False
-    else:
+        verifier.verify(leaf, intermediates)
         return True
+    except VerificationError:
+        return False
 
 
 def suppress_crypto_errors(func):
@@ -85,7 +88,7 @@ def suppress_crypto_errors(func):
     def wrapper(*args, **kwargs) -> Optional[Any]:
         try:
             return func(*args, **kwargs)
-        except (crypto.Error, ValueError) as exc:
+        except ValueError as exc:
             logger.warning(
                 "Suppressed exception while attempting to process PKI data",
                 exc_info=exc,

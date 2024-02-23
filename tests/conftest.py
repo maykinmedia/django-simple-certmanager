@@ -49,7 +49,7 @@ def leaf_pem(root_cert: x509.Certificate, root_key) -> bytes:
             ]
         ),
         subject_key=gen_key(),
-        issuer=root_cert.subject,
+        issuer=root_cert,
         issuer_key=root_key,
         can_issue=False,
     )
@@ -71,7 +71,7 @@ def chain_pem(root_cert: x509.Certificate, root_key) -> bytes:
             ]
         ),
         subject_key=inter_key,
-        issuer=root_cert.subject,
+        issuer=root_cert,
         issuer_key=root_key,
         can_issue=True,
     )
@@ -89,7 +89,7 @@ def chain_pem(root_cert: x509.Certificate, root_key) -> bytes:
             ]
         ),
         subject_key=gen_key(),
-        issuer=intermediate_cert.subject,
+        issuer=intermediate_cert,
         issuer_key=inter_key,
         can_issue=False,
     )
@@ -114,7 +114,7 @@ def broken_chain_pem(root_cert: x509.Certificate, root_key):
             ]
         ),
         subject_key=inter_key,
-        issuer=root_cert.subject,
+        issuer=root_cert,
         issuer_key=root_key,
         can_issue=False,  # Middle isn't allowed to issue certs.
     )
@@ -132,7 +132,7 @@ def broken_chain_pem(root_cert: x509.Certificate, root_key):
             ]
         ),
         subject_key=gen_key(),
-        issuer=intermediate_cert.subject,
+        issuer=intermediate_cert,
         issuer_key=inter_key,
         can_issue=False,
     )
@@ -159,11 +159,13 @@ def temp_private_root(tmp_path, settings):
 
 
 def mkcert(subject, subject_key, issuer=None, issuer_key=None, can_issue=True):
+    public_key = subject_key.public_key()
+    issuer_name = issuer.subject if issuer else subject
     cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
-        .issuer_name(issuer if issuer else subject)
-        .public_key(subject_key.public_key())
+        .issuer_name(issuer_name)
+        .public_key(public_key)
         .serial_number(x509.random_serial_number())
         .not_valid_before(datetime.datetime.utcnow())
         .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=1))
@@ -171,12 +173,38 @@ def mkcert(subject, subject_key, issuer=None, issuer_key=None, can_issue=True):
             x509.SubjectAlternativeName([x509.DNSName("localhost")]),
             critical=False,
         )
+        # required for certificate chain validation, even in leaf certificates
+        .add_extension(
+            x509.BasicConstraints(ca=can_issue, path_length=None),
+            critical=True,
+        )
+        .add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=True,
+                data_encipherment=False,
+                key_agreement=False,
+                key_cert_sign=can_issue,
+                crl_sign=can_issue,
+                encipher_only=False,
+                decipher_only=False,
+            ),
+            critical=True,
+        )
+        .add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(public_key),
+            critical=False,
+        )
     )
 
-    if can_issue:
+    if issuer:
+        ski_ext = issuer.extensions.get_extension_for_class(x509.SubjectKeyIdentifier)
         cert = cert.add_extension(
-            x509.BasicConstraints(ca=True, path_length=None),
-            critical=True,
+            x509.AuthorityKeyIdentifier.from_issuer_subject_key_identifier(
+                ski_ext.value
+            ),
+            critical=False,
         )
 
     cert = cert.sign(issuer_key if issuer_key else subject_key, hashes.SHA256())
