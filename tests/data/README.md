@@ -10,5 +10,6 @@ openssl req -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out test.certificat
 
 The tests making use of these certificates are:
 - `tests/test_certificates.py`
+- `tests/test_admin.py`
 
 These tests will probably start failing once the test certificate expires.
