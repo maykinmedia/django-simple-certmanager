@@ -3,8 +3,9 @@ from django.core.files import File
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
 
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.x509 import load_pem_x509_certificate
+
+from .utils import load_pem_x509_private_key
 
 
 @deconstructible
@@ -44,4 +45,4 @@ class PrivateKeyValidator(PKIValidatorBase):
 
     @staticmethod
     def validate(file_content: bytes) -> None:
-        load_pem_private_key(file_content, password=None)
+        load_pem_x509_private_key(file_content)

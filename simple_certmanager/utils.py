@@ -5,9 +5,21 @@ from typing import Any, Generator, Optional, Union
 
 import certifi
 from cryptography import x509
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from OpenSSL import crypto
 
 logger = logging.getLogger(__name__)
+
+
+def load_pem_x509_private_key(data: bytes):
+    """
+    Small wrapper around the ``cryptography.hazmat`` private key loader.
+
+    Nothing in this code is really specific to x509, but the function name expresses
+    our *intent* to only deal with x509 certificate/key pairs.
+    """
+    # passwords are not supported
+    return load_pem_private_key(data, password=None)
 
 
 def pretty_print_certificate_components(x509name: x509.Name) -> str:
@@ -40,6 +52,9 @@ def check_pem(
     If the pam passes this check it MAY be valid for use. This is only intended
     to catch blatant misconfigurations early. This gives NO guarantees on
     security nor authenticity.
+
+    See all the context in the upstream issue:
+    https://github.com/pyca/cryptography/issues/2381
     """
     # We need still need to use pyOpenSSL primitives for this:
     # https://github.com/pyca/cryptography/issues/6229
