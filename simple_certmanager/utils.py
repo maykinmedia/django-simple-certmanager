@@ -10,12 +10,9 @@ from OpenSSL import crypto
 logger = logging.getLogger(__name__)
 
 
-def pretty_print_certificate_components(x509name) -> str:
-    components = [
-        (label.decode("utf-8"), value.decode("utf-8"))
-        for (label, value) in x509name.get_components()
-    ]
-    return ", ".join([f"{label}: {value}" for (label, value) in components])
+def pretty_print_certificate_components(x509name: x509.Name) -> str:
+    bits = (f"{attr.rfc4514_attribute_name}: {attr.value}" for attr in x509name)
+    return ", ".join(bits)
 
 
 def split_pem(pem: bytes) -> Generator[bytes, None, None]:

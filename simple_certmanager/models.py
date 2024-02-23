@@ -4,6 +4,10 @@ from typing import Optional
 from django.db import models
 from django.utils.translation import gettext, gettext_lazy as _
 
+from cryptography.x509 import (
+    Certificate as CryptographyCertificate,
+    load_pem_x509_certificate,
+)
 from OpenSSL import SSL, crypto
 from privates.fields import PrivateMediaFileField
 
@@ -41,7 +45,7 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
         validators=[PrivateKeyValidator()],
     )
 
-    _certificate_obj = None
+    _certificate_obj: CryptographyCertificate | None = None
     _private_key_obj = None
 
     class Meta:
@@ -52,12 +56,10 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
         return self.label or gettext("(missing label)")
 
     @property
-    def _certificate(self):
-        if not self._certificate_obj:
+    def _certificate(self) -> CryptographyCertificate:
+        if self._certificate_obj is None:
             with self.public_certificate.open(mode="rb") as certificate_f:
-                self._certificate_obj = crypto.load_certificate(
-                    crypto.FILETYPE_PEM, certificate_f.read()
-                )
+                self._certificate_obj = load_pem_x509_certificate(certificate_f.read())
         return self._certificate_obj
 
     @property
@@ -71,23 +73,22 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
 
     @property
     def expiry_date(self) -> datetime:
-        expiry = self._certificate.get_notAfter()
-        return datetime.strptime(expiry.decode("utf-8"), "%Y%m%d%H%M%SZ")
+        # TODO: should probably be stored in a DB column after saving the file so
+        # we can query on it to report (nearly) expired certificates.
+        return self._certificate.not_valid_after_utc
 
     @property
     def issuer(self) -> str:
-        issuer_x509name = self._certificate.get_issuer()
-        return pretty_print_certificate_components(issuer_x509name)
+        return pretty_print_certificate_components(self._certificate.issuer)
 
     @property
     def subject(self) -> str:
-        subject_x509name = self._certificate.get_subject()
-        return pretty_print_certificate_components(subject_x509name)
+        return pretty_print_certificate_components(self._certificate.subject)
 
     @property
     def serial_number(self) -> str:
-        x509sn: int = self._certificate.get_serial_number()
-        sn: str = hex(x509sn)[2:].upper()
+        x509sn = self._certificate.serial_number
+        sn = hex(x509sn)[2:].upper()
         bytes = (sn[i : i + 2] for i in range(0, len(sn), 2))
         return ":".join(bytes)
 
