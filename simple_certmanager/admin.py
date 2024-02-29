@@ -19,9 +19,8 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
         "type",
         "expiry_date",
         "is_valid_key_pair",
-        "has_valid_chain",
     )
-    list_filter = ("label", "type")
+    list_filter = ("type",)
     search_fields = ("label", "type")
     readonly_fields = ("serial_number",)
 
@@ -56,13 +55,5 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
         # alias model property to catch errors
         try:
             return obj.is_valid_key_pair()
-        except FileNotFoundError:
-            return None
-
-    @admin.display(description=_("valid chain"), boolean=True)
-    @suppress_cryptography_errors
-    def has_valid_chain(self, obj: Certificate):
-        try:
-            return obj.has_valid_chain()
         except FileNotFoundError:
             return None
