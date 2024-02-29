@@ -1,6 +1,6 @@
 import logging
 from functools import wraps
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from cryptography import x509
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
@@ -19,8 +19,19 @@ def load_pem_x509_private_key(data: bytes):
     return load_pem_private_key(data, password=None)
 
 
+def _decode(value: Union[str, bytes]) -> str:
+    # attr.value can be bytes, in which case it is must be an UTF8String or
+    # PrintableString (the latter being a subset of ASCII, thus also a subset of UTF8)
+    # See https://www.rfc-editor.org/rfc/rfc5280.txt
+    if not isinstance(value, bytes):
+        return value
+    return value.decode("utf8")
+
+
 def pretty_print_certificate_components(x509name: x509.Name) -> str:
-    bits = (f"{attr.rfc4514_attribute_name}: {attr.value}" for attr in x509name)
+    bits = (
+        f"{attr.rfc4514_attribute_name}: {_decode(attr.value)}" for attr in x509name
+    )
     return ", ".join(bits)
 
 
