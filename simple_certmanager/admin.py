@@ -5,7 +5,7 @@ from privates.admin import PrivateMediaMixin
 
 from .forms import CertificateAdminForm
 from .models import Certificate
-from .utils import suppress_crypto_errors
+from .utils import suppress_cryptography_errors
 
 
 @admin.register(Certificate)
@@ -19,9 +19,8 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
         "type",
         "expiry_date",
         "is_valid_key_pair",
-        "has_valid_chain",
     )
-    list_filter = ("label", "type")
+    list_filter = ("type",)
     search_fields = ("label", "type")
     readonly_fields = ("serial_number",)
 
@@ -33,7 +32,7 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
         return str(obj)
 
     @admin.display(description=_("serial number"))
-    @suppress_crypto_errors
+    @suppress_cryptography_errors
     def serial_number(self, obj: Certificate):
         # alias model property to catch errors
         try:
@@ -42,7 +41,7 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
             return _("file not found")
 
     @admin.display(description=_("expiry date"))
-    @suppress_crypto_errors
+    @suppress_cryptography_errors
     def expiry_date(self, obj: Certificate):
         # alias model property to catch errors
         try:
@@ -51,18 +50,10 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
             return _("file not found")
 
     @admin.display(description=_("valid key pair"), boolean=True)
-    @suppress_crypto_errors
+    @suppress_cryptography_errors
     def is_valid_key_pair(self, obj: Certificate):
         # alias model property to catch errors
         try:
             return obj.is_valid_key_pair()
-        except FileNotFoundError:
-            return None
-
-    @admin.display(description=_("valid chain"), boolean=True)
-    @suppress_crypto_errors
-    def has_valid_chain(self, obj: Certificate):
-        try:
-            return obj.has_valid_chain()
         except FileNotFoundError:
             return None

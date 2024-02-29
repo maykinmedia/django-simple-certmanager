@@ -57,6 +57,7 @@ reports/
 local_settings.py
 db.sqlite3
 testapp/simple_certmanager.db
+testapp/private-media
 
 # Flask stuff:
 instance/

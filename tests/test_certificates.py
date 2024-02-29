@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from django.contrib.admin import AdminSite
@@ -29,7 +29,10 @@ class CertificateTests(TestCase):
                 private_key=File(key_f, name="test.key"),
             )
 
-        self.assertEqual(datetime(2023, 2, 21, 14, 26, 51), certificate.expiry_date)
+        self.assertEqual(
+            certificate.expiry_date,
+            datetime(2023, 2, 21, 14, 26, 51, tzinfo=timezone.utc),
+        )
         self.assertEqual(
             "C: NL, ST: Some-State, O: Internet Widgits Pty Ltd", certificate.issuer
         )
