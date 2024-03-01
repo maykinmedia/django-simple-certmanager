@@ -25,6 +25,7 @@ Features
 
    quickstart
    commands
+   CHANGELOG
 
 
 Indices and tables

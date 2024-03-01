@@ -23,6 +23,7 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 requires-python = ">=3.10"
@@ -30,7 +31,6 @@ dependencies = [
     "django>=3.2",
     "django-privates>=1.5",
     "cryptography>=35.0.0",
-    "certifi",
 ]
 
 [project.urls]
@@ -38,15 +38,9 @@ Homepage = "https://github.com/maykinmedia/django-simple-certmanager"
 Documentation = "http://django-simple-certmanager.readthedocs.io/en/latest/"
 "Bug Tracker" = "https://github.com/maykinmedia/django-simple-certmanager/issues"
 "Source Code" = "https://github.com/maykinmedia/django-simple-certmanager"
-Changelog = "https://github.com/maykinmedia/django-simple-certmanager/blob/main/docs/CHANGELOG.rst"
+Changelog = "https://github.com/maykinmedia/django-simple-certmanager/blob/main/CHANGELOG.rst"
 
 [project.optional-dependencies]
-db = [
-    "psycopg2",
-]
-drf = [
-    "djangorestframework",
-]
 # These are not the test requirements! They are extras to be installed when making use of `simple_certmanager.test`
 testutils = [
     "factory-boy",
