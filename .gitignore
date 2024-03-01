@@ -93,6 +93,12 @@ ENV/
 env.bak/
 venv.bak/
 
+# Certificates
+docker/certificates/*.pem
+docker/certificates/*.key
+docker/certificates/*.csr
+docker/certificates/*.srl
+
 # Spyder project settings
 .spyderproject
 .spyproject

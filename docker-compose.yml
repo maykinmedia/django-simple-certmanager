@@ -1,0 +1,11 @@
+---
+
+version: '3.8'
+
+services:
+  mtls-server:
+    image: nginx
+    volumes:
+      - ./docker/certificates:/certs
+    ports:
+      - 8443:443
