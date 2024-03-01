@@ -1,7 +1,10 @@
+import sys
+
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.utils.translation import gettext_lazy as _
 
-from simple_certmanager.models import Certificate
+from ...models import Certificate
+from ...mtls import VerificationError, check_mtls_connection
 
 
 class Command(BaseCommand):
@@ -30,7 +33,10 @@ class Command(BaseCommand):
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument(
             "host",
-            help="Host name or IP address to connect to, e.g. example.com",
+            help=(
+                "Host name to connect to, e.g. example.com. IP addresses will usually "
+                "fail, so do not use them."
+            ),
         )
         parser.add_argument(
             "--port",
@@ -61,7 +67,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options) -> None:
         host: str = options.pop("host")
-        port: str = options.pop("port")
+        port: int = options.pop("port")
         client_cert_id: int = options.pop("client_cert")
         server_cert_id: int | None = options.pop("server_cert")
 
@@ -82,3 +88,18 @@ class Command(BaseCommand):
         self.stdout.write(f"  * Using client certificate: {client_cert}")
         if server_cert:
             self.stdout.write(f"  * Using server CA: {server_cert}")
+
+        self.stdout.write("Checking connection...", ending="")
+        try:
+            check_mtls_connection(
+                host=host,
+                port=port,
+                client_cert=client_cert,
+                server_ca=server_cert,
+            )
+        except VerificationError as exc:
+            self.stdout.write(" FAILURE")
+            self.stderr.write(exc.args[0])
+            sys.exit(1)
+        else:
+            self.stdout.write(" OK!")
