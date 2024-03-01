@@ -4,16 +4,14 @@ These utilities apply to file fields and subclasses thereof.
 """
 
 import logging
-from typing import List
 
 from django.db import models, transaction
-from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
 
 logger = logging.getLogger(__name__)
 
 
-def get_file_field_names(model: ModelBase) -> List[str]:
+def get_file_field_names(model: type[models.Model]) -> list[str]:
     """
     Collect names of :class:`django.db.models.FileField` (& subclass) model fields.
     """
@@ -69,10 +67,10 @@ class DeleteFileFieldFilesMixin:
         # in case the DB deletion errors but then the file is gone?
         # Postponing that decision, as likely a number of tests will fail because they
         # run in transactions.
-        file_field_names = get_file_field_names(type(self))
+        file_field_names = get_file_field_names(type(self))  # type: ignore
         with transaction.atomic():
-            result = super().delete(*args, **kwargs)
-            transaction.on_commit(lambda: _delete_obj_files(file_field_names, self))
+            result = super().delete(*args, **kwargs)  # type: ignore
+            transaction.on_commit(lambda: _delete_obj_files(file_field_names, self))  # type: ignore
         return result
 
-    delete.alters_data = True
+    delete.alters_data = True  # type: ignore
