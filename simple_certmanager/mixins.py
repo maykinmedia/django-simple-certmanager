@@ -48,7 +48,7 @@ class log_failed_deletes:
             return True
 
 
-def _delete_obj_files(fields: List[str], obj: models.Model) -> None:
+def _delete_obj_files(fields: list[str], obj: models.Model) -> None:
     for name in fields:
         filefield = getattr(obj, name)
         with log_failed_deletes(filefield):
