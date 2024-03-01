@@ -4,7 +4,7 @@ Quickstart
 Requirements
 ------------
 
-* Python 3.7 or newer
+* Python 3.10 or newer
 * Django 3.2 or newer
 
 Installation

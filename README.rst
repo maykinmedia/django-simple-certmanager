@@ -4,7 +4,6 @@ django-simple-certmanager
 :Version: 1.4.1
 :Source: https://github.com/maykinmedia/django-simple-certmanager
 :Keywords: certificates
-:PythonVersion: 3.9
 
 |build-status| |code-quality| |black| |coverage| |docs|
 
@@ -31,8 +30,7 @@ Installation
 Requirements
 ------------
 
-* Python 3.7 or above
-* setuptools 30.3.0 or above
+* Python 3.10 or above
 * Django 3.2 or newer
 
 

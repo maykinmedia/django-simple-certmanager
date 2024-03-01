@@ -25,7 +25,6 @@ Features
 
    quickstart
    commands
-   CHANGELOG
 
 
 Indices and tables
@@ -61,4 +60,3 @@ Indices and tables
 
 .. |pypi-version| image:: https://img.shields.io/pypi/v/django-simple-certmanager.svg
     :target: https://pypi.org/project/django-simple-certmanager/
-
