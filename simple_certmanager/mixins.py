@@ -70,7 +70,9 @@ class DeleteFileFieldFilesMixin:
         file_field_names = get_file_field_names(type(self))  # type: ignore
         with transaction.atomic():
             result = super().delete(*args, **kwargs)  # type: ignore
-            transaction.on_commit(lambda: _delete_obj_files(file_field_names, self))  # type: ignore
+            transaction.on_commit(
+                lambda: _delete_obj_files(file_field_names, self)  # type: ignore
+            )
         return result
 
     delete.alters_data = True  # type: ignore
