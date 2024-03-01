@@ -1,6 +1,7 @@
 # README
 
-This directory is mounted in the nginx container configured for mutual TLS.
+This directory contains the (generated) certificates for the OpenSSL server (see
+`mtls_server.sh` in the root).
 
 Make sure to run the script `./generate_certificates.sh` from the root of the
 repository to populate these certificates. They are deliberately excluded from

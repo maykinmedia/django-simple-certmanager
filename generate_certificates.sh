@@ -2,11 +2,11 @@
 #
 # Run script from the root of the repository.
 #
-# You need openssl on your system. See ./docker/certificates/README.md for more
+# You need openssl on your system. See ./certificates/README.md for more
 # information.
 #
 
-cd ./docker/certificates
+cd ./certificates
 
 gen_root_ca() {
     # Generate private key
