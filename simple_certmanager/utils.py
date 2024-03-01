@@ -2,6 +2,8 @@ import logging
 from functools import wraps
 from typing import Callable, ParamSpec, TypeVar
 
+from django.utils.encoding import force_str
+
 from cryptography import x509
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
@@ -19,18 +21,13 @@ def load_pem_x509_private_key(data: bytes):
     return load_pem_private_key(data, password=None)
 
 
-def _decode(value: str | bytes) -> str:
+def pretty_print_certificate_components(x509name: x509.Name) -> str:
     # attr.value can be bytes, in which case it is must be an UTF8String or
     # PrintableString (the latter being a subset of ASCII, thus also a subset of UTF8)
     # See https://www.rfc-editor.org/rfc/rfc5280.txt
-    if not isinstance(value, bytes):
-        return value
-    return value.decode("utf8")
-
-
-def pretty_print_certificate_components(x509name: x509.Name) -> str:
     bits = (
-        f"{attr.rfc4514_attribute_name}: {_decode(attr.value)}" for attr in x509name
+        f"{attr.rfc4514_attribute_name}: {force_str(attr.value, encoding='utf-8')}"
+        for attr in x509name
     )
     return ", ".join(bits)
 
