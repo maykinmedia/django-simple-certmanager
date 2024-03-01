@@ -10,6 +10,7 @@ from .utils import suppress_cryptography_errors
 
 @admin.register(Certificate)
 class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
+    model: type[Certificate]
     form = CertificateAdminForm
 
     fields = ("label", "serial_number", "type", "public_certificate", "private_key")
@@ -28,7 +29,7 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     private_media_no_download_fields = ("private_key",)
 
     @admin.display(description=_("label"), ordering="label")
-    def get_label(self, obj):
+    def get_label(self, obj) -> str:
         return str(obj)
 
     @admin.display(description=_("serial number"))
@@ -51,7 +52,7 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
 
     @admin.display(description=_("valid key pair"), boolean=True)
     @suppress_cryptography_errors
-    def is_valid_key_pair(self, obj: Certificate):
+    def is_valid_key_pair(self, obj: Certificate) -> bool | None:
         # alias model property to catch errors
         try:
             return obj.is_valid_key_pair()

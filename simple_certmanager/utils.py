@@ -1,6 +1,8 @@
 import logging
 from functools import wraps
-from typing import Any, Optional
+from typing import Callable, ParamSpec, TypeVar
+
+from django.utils.encoding import force_str
 
 from cryptography import x509
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
@@ -20,17 +22,27 @@ def load_pem_x509_private_key(data: bytes):
 
 
 def pretty_print_certificate_components(x509name: x509.Name) -> str:
-    bits = (f"{attr.rfc4514_attribute_name}: {attr.value}" for attr in x509name)
+    # attr.value can be bytes, in which case it is must be an UTF8String or
+    # PrintableString (the latter being a subset of ASCII, thus also a subset of UTF8)
+    # See https://www.rfc-editor.org/rfc/rfc5280.txt
+    bits = (
+        f"{attr.rfc4514_attribute_name}: {force_str(attr.value, encoding='utf-8')}"
+        for attr in x509name
+    )
     return ", ".join(bits)
 
 
-def suppress_cryptography_errors(func):
+T = TypeVar("T")
+P = ParamSpec("P")
+
+
+def suppress_cryptography_errors(func: Callable[P, T], /) -> Callable[P, T | None]:
     """
     Decorator to suppress exceptions thrown while processing PKI data.
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs) -> Optional[Any]:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T | None:
         try:
             return func(*args, **kwargs)
         except ValueError as exc:
