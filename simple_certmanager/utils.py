@@ -36,7 +36,7 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
-def suppress_cryptography_errors(func: Callable[P, T]) -> Callable[P, T | None]:
+def suppress_cryptography_errors(func: Callable[P, T], /) -> Callable[P, T | None]:
     """
     Decorator to suppress exceptions thrown while processing PKI data.
     """

@@ -51,7 +51,7 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
         verbose_name = _("certificate")
         verbose_name_plural = _("certificates")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.label or gettext("(missing label)")
 
     @property
