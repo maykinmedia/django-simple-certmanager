@@ -10,6 +10,7 @@ from .utils import suppress_cryptography_errors
 
 @admin.register(Certificate)
 class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
+    model: type[Certificate]
     form = CertificateAdminForm
 
     fields = ("label", "serial_number", "type", "public_certificate", "private_key")
