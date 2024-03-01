@@ -82,6 +82,10 @@ def check_mtls_connection(
     address = (host, port)
     try:
         _attempt_connection(context, address, timeout=timeout)
+    except ConnectionRefusedError as exc:
+        raise VerificationError(
+            f"Could not establish a connection to {host}:{port}"
+        ) from exc
     except ssl.SSLCertVerificationError as exc:
         using_ca = server_ca or "no"
         raise VerificationError(
