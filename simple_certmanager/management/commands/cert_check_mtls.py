@@ -89,17 +89,28 @@ class Command(BaseCommand):
         if server_cert:
             self.stdout.write(f"  * Using server CA: {server_cert}")
 
-        self.stdout.write("Checking connection...", ending="")
+        self.stdout.write("\nRunning checks...")
+
+        _first = True
+
+        def check_callback(check: str):
+            nonlocal _first
+            if not _first:
+                self.stdout.write("  OK")
+            self.stdout.write(f"  -> {check}?", ending="")
+            _first = False
+
         try:
             check_mtls_connection(
                 host=host,
                 port=port,
                 client_cert=client_cert,
                 server_ca=server_cert,
+                check_callback=check_callback,
             )
         except VerificationError as exc:
-            self.stdout.write(" FAILURE")
+            self.stdout.write("  FAIL")
             self.stderr.write(exc.args[0])
             sys.exit(1)
         else:
-            self.stdout.write(" OK!")
+            self.stdout.write(" OK")

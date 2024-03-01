@@ -6,6 +6,7 @@ import logging
 import socket
 import ssl
 from types import ModuleType
+from typing import Callable
 
 from django.utils import timezone
 
@@ -25,12 +26,17 @@ class VerificationError(Exception):
     pass
 
 
+def noop(check: str):
+    pass
+
+
 def check_mtls_connection(
     host: str,
     port: int,
     client_cert: Certificate,
     server_ca: Certificate | None = None,
     timeout: float = 3,
+    check_callback: Callable[[str], None] = noop,
 ):
     """
     Initiate a (mutual) TLS connection attempt to the specified host and port.
@@ -52,17 +58,20 @@ def check_mtls_connection(
 
     :raises: :class:`VerificationError` for any detected problems.
     """
+    check_callback("client certificate type")
     if client_cert.type != CertificateTypes.key_pair:
         raise VerificationError(
             "A client certificate must be of the private key + certificate pair type."
         )
 
+    check_callback("valid client key pair")
     if not client_cert.is_valid_key_pair():
         raise VerificationError(
             "The client certificate private key and certificate do not match."
         )
 
     now = timezone.now()
+    check_callback("client certificate expired")
     if client_cert.expiry_date < now:
         raise VerificationError("The client certificate is expired.")
 
@@ -80,6 +89,7 @@ def check_mtls_connection(
     # so instead we attempt a connection without and see if that raises the expected
     # error.
     address = (host, port)
+    check_callback("mTLS required")
     try:
         _attempt_connection(context, address, timeout=timeout)
     except ConnectionRefusedError as exc:
@@ -92,7 +102,10 @@ def check_mtls_connection(
             f"Could not verify the server certificate (using CA: {using_ca})"
         ) from exc
     except ssl.SSLError as exc:
-        print(exc)
+        logger.debug(
+            "Got expected SSL error when attempting connection without client cert",
+            exc_info=exc,
+        )
         requires_client_cert = True
     else:
         requires_client_cert = False
@@ -109,7 +122,11 @@ def check_mtls_connection(
         keyfile=client_cert.private_key.path,
         password=_forbid_password,
     )
-    _attempt_connection(context, address, timeout=timeout)
+    check_callback("client certificate accepted")
+    try:
+        _attempt_connection(context, address, timeout=timeout)
+    except ssl.SSLError as exc:
+        raise VerificationError("Client key/certificate appear invalid.") from exc
 
 
 def _forbid_password():
@@ -129,3 +146,13 @@ def _attempt_connection(
     with socket.create_connection(address, timeout=timeout) as sock:
         with context.wrap_socket(sock, server_hostname=address[0]) as ssock:
             logger.debug("Connected using %s", ssock.version())
+            logger.debug(
+                "Sending and receiving some data to force the handshake" "to finish."
+            )
+            try:
+                ssock.send(b"-mTLS verification-")
+                ssock.recv()
+            # timeouts are okay, we're sending BS data anyway. We are looking
+            # for ssl errors instead.
+            except TimeoutError:
+                pass
