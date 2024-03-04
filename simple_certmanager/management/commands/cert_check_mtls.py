@@ -1,10 +1,16 @@
 import sys
+from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.utils.translation import gettext_lazy as _
 
 from ...models import Certificate
 from ...mtls import SocketCheck, VerificationError
+
+CHECK_TYPES = {
+    "socket": SocketCheck,
+    "http": SocketCheck,
+}
 
 
 class Command(BaseCommand):
@@ -76,6 +82,23 @@ class Command(BaseCommand):
                 "HTTP traffic is rejected."
             ),
         )
+        # Specify check to run
+        parser.add_argument(
+            "--check-type",
+            default="socket",
+            help=f"Type of check to use. Available types are: {', '.join(CHECK_TYPES)}",
+        )
+        # HTTP check options
+        parser.add_argument(
+            "--http-method",
+            default="GET",
+            help="HTTP verb to use for the test request. Defaults to GET.",
+        )
+        parser.add_argument(
+            "--http-path",
+            default="/",
+            help="Path to send the request to. Defaults to '/'.",
+        )
 
     def handle(self, *args, **options) -> None:
         host: str = options.pop("host")
@@ -84,6 +107,17 @@ class Command(BaseCommand):
         server_cert_id: int | None = options.pop("server_cert")
         strict: bool = options.pop("strict")
 
+        # Check type
+        check_type: str = options.pop("check_type")
+        if check_type not in CHECK_TYPES:
+            raise CommandError(f"Check type '{check_type}' is unknown.")
+        check_cls = CHECK_TYPES[check_type]
+
+        # HTTP options
+        http_method: str = options.pop("http_method").upper()
+        http_path: str = options.pop("http_path")
+
+        # Look up certificates
         certificates = Certificate.objects.in_bulk(
             [client_cert_id, server_cert_id], field_name="id"
         )
@@ -97,30 +131,36 @@ class Command(BaseCommand):
                 f"Server certificate with id {server_cert_id} does not exist."
             )
 
+        # Prepare check instance
+        extra: dict[str, Any]
+        match check_type:
+            case "socket":
+                extra = {}
+            case "http":
+                extra = {
+                    "method": http_method,
+                    "path": http_path,
+                }
+            case _:
+                raise CommandError("Unknown check type specified.")
+
+        check = check_cls(
+            host=host,
+            port=port,
+            client_cert=client_cert,
+            server_ca=server_cert,
+            strict=strict,
+            check_callback=self._get_check_callback(),
+            **extra,
+        )
+
+        # Start check
         self.stdout.write(f"Connection test to: {host}:{port}")
         self.stdout.write(f"  * Using client certificate: {client_cert}")
         if server_cert:
             self.stdout.write(f"  * Using server CA: {server_cert}")
 
         self.stdout.write("\nRunning checks...")
-
-        _first = True
-
-        def check_callback(check: str):
-            nonlocal _first
-            if not _first:
-                self.stdout.write("  OK")
-            self.stdout.write(f"  -> {check}?", ending="")
-            _first = False
-
-        check = SocketCheck(
-            host=host,
-            port=port,
-            client_cert=client_cert,
-            server_ca=server_cert,
-            strict=strict,
-            check_callback=check_callback,
-        )
 
         try:
             check()
@@ -130,3 +170,15 @@ class Command(BaseCommand):
             sys.exit(1)
         else:
             self.stdout.write(" OK")
+
+    def _get_check_callback(self):
+        _first = True
+
+        def check_callback(check: str):
+            nonlocal _first
+            if not _first:
+                self.stdout.write("  OK")
+            self.stdout.write(f"  -> {check}?", ending="")
+            _first = False
+
+        return check_callback
