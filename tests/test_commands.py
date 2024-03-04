@@ -26,9 +26,10 @@ class CertificateDumpTests(TestCase):
         self.addCleanup(remove_certs_archive)
 
     def test_dump_certificate_files(self):
-        with open(TEST_FILES / "test.certificate", "r") as client_certificate_f, open(
-            TEST_FILES / "test.key", "r"
-        ) as key_f:
+        with (
+            open(TEST_FILES / "test.certificate", "r") as client_certificate_f,
+            open(TEST_FILES / "test.key", "r") as key_f,
+        ):
             certificate1 = Certificate.objects.create(
                 label="Test certificate",
                 type=CertificateTypes.key_pair,

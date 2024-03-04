@@ -44,9 +44,10 @@ def test_detail_view(temp_private_root, admin_client):
     The functionality for the private key is implemented and tested in django-
     privates, but we need to make sure that `private_media_no_download_fields` has
     actually been set in this library."""
-    with open(TEST_FILES / "test.certificate", "r") as client_certificate_f, open(
-        TEST_FILES / "test.key", "r"
-    ) as key_f:
+    with (
+        open(TEST_FILES / "test.certificate", "r") as client_certificate_f,
+        open(TEST_FILES / "test.key", "r") as key_f,
+    ):
         certificate = Certificate.objects.create(
             label="Test certificate",
             type=CertificateTypes.key_pair,
@@ -101,9 +102,10 @@ def test_list_view_invalid_public_cert(temp_private_root, admin_client, caplog):
 def test_list_view_invalid_private_key(temp_private_root, admin_client, caplog):
     """Assert that `changelist_view` works if DB contains a corrupted private key"""
     url = reverse("admin:simple_certmanager_certificate_changelist")
-    with open(TEST_FILES / "test.certificate", "r") as client_certificate_f, open(
-        TEST_FILES / "invalid.certificate", "r"
-    ) as key_f:
+    with (
+        open(TEST_FILES / "test.certificate", "r") as client_certificate_f,
+        open(TEST_FILES / "invalid.certificate", "r") as key_f,
+    ):
         Certificate.objects.create(
             label="Test certificate",
             type=CertificateTypes.key_pair,
@@ -152,9 +154,10 @@ def test_detail_view_invalid_public_cert(temp_private_root, admin_client, caplog
 def test_detail_view_invalid_private_key(temp_private_root, admin_client, caplog):
     """Assert that `change_view` works if DB contains a corrupted private key"""
 
-    with open(TEST_FILES / "test.certificate", "r") as client_certificate_f, open(
-        TEST_FILES / "invalid.certificate", "r"
-    ) as key_f:
+    with (
+        open(TEST_FILES / "test.certificate", "r") as client_certificate_f,
+        open(TEST_FILES / "invalid.certificate", "r") as key_f,
+    ):
         certificate = Certificate.objects.create(
             label="Test certificate",
             type=CertificateTypes.key_pair,

@@ -19,9 +19,10 @@ TEST_FILES = Path(__file__).parent / "data"
 @temp_private_root()
 class CertificateTests(TestCase):
     def test_calculated_properties(self):
-        with open(TEST_FILES / "test.certificate", "r") as client_certificate_f, open(
-            TEST_FILES / "test.key", "r"
-        ) as key_f:
+        with (
+            open(TEST_FILES / "test.certificate", "r") as client_certificate_f,
+            open(TEST_FILES / "test.key", "r") as key_f,
+        ):
             certificate = Certificate.objects.create(
                 label="Test certificate",
                 type=CertificateTypes.key_pair,
@@ -46,9 +47,10 @@ class CertificateTests(TestCase):
         self.assertInHTML("Serial number:", form.as_p())
 
     def test_creating_valid_key_pair(self):
-        with open(TEST_FILES / "test.certificate", "r") as client_certificate_f, open(
-            TEST_FILES / "test.key", "r"
-        ) as key_f:
+        with (
+            open(TEST_FILES / "test.certificate", "r") as client_certificate_f,
+            open(TEST_FILES / "test.key", "r") as key_f,
+        ):
             form = CertificateAdminForm(
                 data={
                     "label": "Test valid pair",
@@ -99,9 +101,10 @@ class CertificateTests(TestCase):
         self.assertTrue(form.is_valid())
 
     def test_invalid_key_pair(self):
-        with open(TEST_FILES / "test.certificate", "r") as client_certificate_f, open(
-            TEST_FILES / "test2.key", "r"
-        ) as key_f:
+        with (
+            open(TEST_FILES / "test.certificate", "r") as client_certificate_f,
+            open(TEST_FILES / "test2.key", "r") as key_f,
+        ):
             certificate = Certificate.objects.create(
                 label="Test certificate",
                 type=CertificateTypes.key_pair,
@@ -112,9 +115,10 @@ class CertificateTests(TestCase):
         self.assertFalse(certificate.is_valid_key_pair())
 
     def test_valid_key_pair(self):
-        with open(TEST_FILES / "test.certificate", "r") as client_certificate_f, open(
-            TEST_FILES / "test.key", "r"
-        ) as key_f:
+        with (
+            open(TEST_FILES / "test.certificate", "r") as client_certificate_f,
+            open(TEST_FILES / "test.key", "r") as key_f,
+        ):
             certificate = Certificate.objects.create(
                 label="Test certificate",
                 type=CertificateTypes.key_pair,
@@ -136,9 +140,10 @@ class CertificateTests(TestCase):
 
     def test_admin_changelist_doesnt_crash_on_missing_files(self):
         # Github #39
-        with open(TEST_FILES / "test.certificate", "r") as client_certificate_f, open(
-            TEST_FILES / "test.key", "r"
-        ) as key_f:
+        with (
+            open(TEST_FILES / "test.certificate", "r") as client_certificate_f,
+            open(TEST_FILES / "test.key", "r") as key_f,
+        ):
             certificate = Certificate.objects.create(
                 label="Test certificate",
                 type=CertificateTypes.key_pair,
