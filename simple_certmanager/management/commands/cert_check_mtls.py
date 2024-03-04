@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.utils.translation import gettext_lazy as _
 
 from ...models import Certificate
-from ...mtls import VerificationError, check_mtls_connection
+from ...mtls import SocketCheck, VerificationError
 
 
 class Command(BaseCommand):
@@ -39,6 +39,7 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
+            "-p",
             "--port",
             type=int,
             default=443,
@@ -64,12 +65,24 @@ class Command(BaseCommand):
                 "and/or private Certificate Authorities)."
             ),
         )
+        parser.add_argument(
+            "--no-strict",
+            dest="strict",
+            action="store_false",
+            help=(
+                "Strict mode checks some additional requirements, which *may* not be "
+                "applicable to the real HTTP traffic. For example, the TLS connection "
+                "could be accepted without offering a client certificate, but actual "
+                "HTTP traffic is rejected."
+            ),
+        )
 
     def handle(self, *args, **options) -> None:
         host: str = options.pop("host")
         port: int = options.pop("port")
         client_cert_id: int = options.pop("client_cert")
         server_cert_id: int | None = options.pop("server_cert")
+        strict: bool = options.pop("strict")
 
         certificates = Certificate.objects.in_bulk(
             [client_cert_id, server_cert_id], field_name="id"
@@ -100,14 +113,17 @@ class Command(BaseCommand):
             self.stdout.write(f"  -> {check}?", ending="")
             _first = False
 
+        check = SocketCheck(
+            host=host,
+            port=port,
+            client_cert=client_cert,
+            server_ca=server_cert,
+            strict=strict,
+            check_callback=check_callback,
+        )
+
         try:
-            check_mtls_connection(
-                host=host,
-                port=port,
-                client_cert=client_cert,
-                server_ca=server_cert,
-                check_callback=check_callback,
-            )
+            check()
         except VerificationError as exc:
             self.stdout.write("  FAIL")
             self.stderr.write(exc.args[0])

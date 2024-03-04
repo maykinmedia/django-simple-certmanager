@@ -1,0 +1,13 @@
+---
+
+version: '3.8'
+
+services:
+  mtls-nginx:
+    image: nginx
+    volumes:
+      # Make sure to have the certificates generated before starting the services
+      - ./certificates:/certs:ro
+      - ./default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - 8443:443
