@@ -1,16 +1,20 @@
 import sys
-from typing import Any
+from types import ModuleType
+from typing import TypeAlias
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
-from django.utils.translation import gettext_lazy as _
 
 from ...models import Certificate
-from ...mtls import SocketCheck, VerificationError
+from ...mtls import HTTPCheck, HttpMethods, SocketCheck, VerificationError
 
-CHECK_TYPES = {
-    "socket": SocketCheck,
-    "http": SocketCheck,
-}
+requests: ModuleType | None
+try:
+    import requests  # noa
+except ImportError:
+    requests = None
+
+
+Check: TypeAlias = SocketCheck | HTTPCheck
 
 
 class Command(BaseCommand):
@@ -85,8 +89,9 @@ class Command(BaseCommand):
         # Specify check to run
         parser.add_argument(
             "--check-type",
-            default="socket",
-            help=f"Type of check to use. Available types are: {', '.join(CHECK_TYPES)}",
+            default="http" if requests is not None else "socket",
+            help="Type of check to use.",
+            choices=("socket", "http"),
         )
         # HTTP check options
         parser.add_argument(
@@ -109,12 +114,9 @@ class Command(BaseCommand):
 
         # Check type
         check_type: str = options.pop("check_type")
-        if check_type not in CHECK_TYPES:
-            raise CommandError(f"Check type '{check_type}' is unknown.")
-        check_cls = CHECK_TYPES[check_type]
 
         # HTTP options
-        http_method: str = options.pop("http_method").upper()
+        http_method: HttpMethods = options.pop("http_method").upper()
         http_path: str = options.pop("http_path")
 
         # Look up certificates
@@ -132,27 +134,32 @@ class Command(BaseCommand):
             )
 
         # Prepare check instance
-        extra: dict[str, Any]
+        check: Check
         match check_type:
             case "socket":
-                extra = {}
+                check = SocketCheck(
+                    host=host,
+                    port=port,
+                    client_cert=client_cert,
+                    server_ca=server_cert,
+                    strict=strict,
+                    check_callback=self._get_check_callback(),
+                )
             case "http":
-                extra = {
-                    "method": http_method,
-                    "path": http_path,
-                }
+                if http_method not in HttpMethods.__args__:  # type:ignore[attr-defined]
+                    raise CommandError("Invalid HTTP method provided.")
+                check = HTTPCheck(
+                    host=host,
+                    port=port,
+                    client_cert=client_cert,
+                    server_ca=server_cert,
+                    strict=strict,
+                    check_callback=self._get_check_callback(),
+                    method=http_method,
+                    path=http_path,
+                )
             case _:
-                raise CommandError("Unknown check type specified.")
-
-        check = check_cls(
-            host=host,
-            port=port,
-            client_cert=client_cert,
-            server_ca=server_cert,
-            strict=strict,
-            check_callback=self._get_check_callback(),
-            **extra,
-        )
+                raise CommandError(f"Check type '{check_type}' is unknown.")
 
         # Start check
         self.stdout.write(f"Connection test to: {host}:{port}")
@@ -160,7 +167,7 @@ class Command(BaseCommand):
         if server_cert:
             self.stdout.write(f"  * Using server CA: {server_cert}")
 
-        self.stdout.write("\nRunning checks...")
+        self.stdout.write(f"\nRunning checks (check type: {check_type})...")
 
         try:
             check()

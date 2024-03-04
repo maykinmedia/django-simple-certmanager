@@ -7,7 +7,7 @@ import socket
 import ssl
 from dataclasses import dataclass
 from types import ModuleType
-from typing import Callable
+from typing import Callable, Literal, TypeAlias
 
 from django.utils import timezone
 
@@ -128,7 +128,8 @@ class BaseCheck:
         self.check_callback("client certificate type")
         if self.client_cert.type != CertificateTypes.key_pair:
             raise VerificationError(
-                "A client certificate must be of the private key + certificate pair type."
+                "A client certificate must be of the private key + certificate pair "
+                "type."
             )
 
         self.check_callback("valid client key pair")
@@ -168,14 +169,14 @@ class SocketCheck(BaseCheck):
         certificate, which is expected to raise an exception. If this doesn't happen,
         it's an indicator that the service may not require a client certificate at all.
         """
-        # check which CA bundle to use - it's a single file with concatenated certificates
-        # in PEM format.
+        # check which CA bundle to use - it's a single file with concatenated
+        # certificates in PEM format.
         default_bundle = certifi.where() if certifi is not None else None
         ca_bundle: str | None = (
             self.server_ca.public_certificate.path if self.server_ca else default_bundle
         )
-        # when ca_bundle is None, create_default_context loads the default system root CA
-        # certificates
+        # when ca_bundle is None, create_default_context loads the default system root
+        # CA certificates
         context = ssl.create_default_context(cafile=ca_bundle)
 
         if self.strict:
@@ -237,8 +238,7 @@ class SocketCheck(BaseCheck):
                 logger.debug("Connected using %s", ssock.version())
                 logger.debug(
                     "Sending and receiving some data to force the handshake"
-                    "to "
-                    "finish."
+                    "to finish."
                 )
                 try:
                     ssock.send(b"-mTLS verification-")
@@ -247,3 +247,69 @@ class SocketCheck(BaseCheck):
                 # for ssl errors instead.
                 except TimeoutError:
                     pass
+
+
+HttpMethods: TypeAlias = Literal["GET", "POST", "HEAD"]
+
+
+@dataclass
+class HTTPCheck(BaseCheck):
+    method: HttpMethods = "GET"
+    path: str = "/"
+
+    def check_requirements(self) -> None:
+        try:
+            import requests  # noqa
+        except ImportError:
+            raise RequirementMissingError(
+                "The %r check requires the 'requests' library to be installed."
+                % type(self)
+            )
+
+    def perform_check(self) -> None:
+        """
+        Make a real HTTP request and fail on HTTP 4xx and 5xx errors.
+        """
+        # Make a call without the client certificate, ensuring mTLS is actually
+        # required.
+        if self.strict:
+            response = self._make_request()
+            if not 400 <= (code := response.status_code) < 600:
+                raise UnexpectedSuccessfulConnectionError(
+                    "mTLS does not appear required. A connection without client "
+                    f"chain/key returned an HTTPresponse with status code {code}."
+                )
+
+        # Make HTTP call with client certificate
+        cert = (
+            self.client_cert.public_certificate.path,
+            self.client_cert.private_key.path,
+        )
+        response = self._make_request(cert=cert)
+        if 400 <= (code := response.status_code) < 600:
+            raise VerificationError(
+                f"mTLS request failed, got HTTP response code {code}."
+            )
+
+    def _make_request(self, cert: tuple[str, str] | None = None):
+        import requests
+
+        address = f"{self.host}:{self.port}"
+        url = f"https://{address}{self.path}"
+
+        # check if we need to use a custom CA bundle to verify the server certificate
+        verify: str | bool = (
+            self.server_ca.public_certificate.path if self.server_ca else True
+        )
+        try:
+            return requests.request(
+                method=self.method,
+                url=url,
+                verify=verify,
+                timeout=self.timeout,
+                cert=cert,
+            )
+        except requests.ConnectionError as exc:
+            raise VerificationError(f"Could not connect to {address}.") from exc
+        except requests.RequestException as exc:
+            raise VerificationError("Got request error %s" % exc) from exc
