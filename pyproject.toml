@@ -54,6 +54,8 @@ tests = [
     "black",
     "flake8",
     "freezegun",
+]
+type-checking = [
     "django-stubs[compatible-mypy]",
 ]
 coverage = [
