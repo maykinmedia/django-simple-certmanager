@@ -1,7 +1,6 @@
 import zipfile
 
 from django.core.management.base import BaseCommand
-from django.utils.translation import gettext_lazy as _
 
 from simple_certmanager.models import Certificate
 
@@ -12,7 +11,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--filename",
-            help=_("Name of the archive to write data to"),
+            help="Name of the archive to write data to",
             type=str,
             default="certificates.zip",
         )
