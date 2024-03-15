@@ -5,7 +5,7 @@ Changelog
 2.0.0
 =====
 
-*March ??, 2024*
+*March 15, 2024*
 
 **Breaking changes**
 
@@ -19,6 +19,7 @@ Changelog
 * Confirmed support for Django 4.2
 * Replaced PyOpenSSL dependency/usage with cryptography package
 * Added mypy type checking to CI pipeline, improved type hints
+* Switched package management to ``pyproject.toml`` file
 
 1.4.1
 =====
