@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: 1.4.1\n"
+"Project-Id-Version: 2.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-29 08:08-0500\n"
+"POT-Creation-Date: 2024-03-15 08:09-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,75 +17,84 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-#: simple_certmanager/admin.py:21 simple_certmanager/models.py:17
+
+#: admin.py:31 models.py:21
 msgid "label"
 msgstr "label"
 
-#: simple_certmanager/admin.py:25
-msgid "expiry date"
-msgstr "vervaldatum"
+#: admin.py:35
+msgid "serial number"
+msgstr "serienummer"
 
-#: simple_certmanager/admin.py:31
+#: admin.py:42 admin.py:51
 msgid "file not found"
 msgstr "bestand bestaat niet"
 
-#: simple_certmanager/admin.py:33
+#: admin.py:44
+msgid "expiry date"
+msgstr "vervaldatum"
+
+#: admin.py:53
 msgid "valid key pair"
 msgstr "geldig sleutelpaar"
 
-#: simple_certmanager/constants.py:7
+#: constants.py:6
 msgid "Key-pair"
 msgstr "Sleutelpaar"
 
-#: simple_certmanager/constants.py:8
+#: constants.py:7
 msgid "Certificate only"
 msgstr "Enkel certificaat"
 
-#: simple_certmanager/forms.py:26
-msgid "Invalid certificate"
-msgstr "Ongeldig certificaat"
-
-#: simple_certmanager/management/commands/dump_certs.py:15
-msgid "Name of the archive to write data to"
-msgstr "Naam van het ZIP-bestand om de gegevens naar weg te schrijven"
-
-#: simple_certmanager/models.py:19
+#: models.py:23
 msgid "Recognisable label for the certificate"
 msgstr "Label om het certificaat mee te identificeren"
 
-#: simple_certmanager/models.py:22
+#: models.py:26
 msgid "type"
 msgstr "type"
 
-#: simple_certmanager/models.py:26
+#: models.py:30
 msgid "Is this only a certificate or is there an associated private key?"
 msgstr ""
 "Gaat het enkel om het certificaat, of is er ook een bijhorende privésleutel?"
 
-#: simple_certmanager/models.py:30
+#: models.py:34
 msgid "public certificate"
 msgstr "publiek certificaat"
 
-#: simple_certmanager/models.py:31
+#: models.py:35
 msgid "The content of the certificate"
 msgstr "De inhoud van het certificaat, in PEM-formaat"
 
-#: simple_certmanager/models.py:35
+#: models.py:40
 msgid "private key"
 msgstr "privésleutel"
 
-#: simple_certmanager/models.py:36
+#: models.py:41
 msgid "The content of the private key"
 msgstr "De inhoud van de privésleutel, in PEM-formaat"
 
-#: simple_certmanager/models.py:42
+#: models.py:51
 msgid "certificate"
 msgstr "certificaat"
 
-#: simple_certmanager/models.py:43
+#: models.py:52
 msgid "certificates"
 msgstr "certificaten"
 
-#: simple_certmanager/models.py:49
+#: models.py:55
 msgid "(missing label)"
 msgstr "(label ontbreekt)"
+
+#: validators.py:13
+msgid "Invalid file provided"
+msgstr "Ongeldig bestand opgegeven"
+
+#: validators.py:36
+msgid "Invalid file provided, expected a certificate in PEM format"
+msgstr "Ongeldig bestand, het bestand moet een certificaat in PEM-formaat zijn."
+
+#: validators.py:44
+msgid "Invalid file provided, expected a private key in PEM format"
+msgstr "Ongeldig bestand, het bestand moet een privésleutel in PEM-formaat zijn."
