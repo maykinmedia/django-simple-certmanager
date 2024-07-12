@@ -2,6 +2,14 @@
 Changelog
 =========
 
+2.0.1
+=====
+
+*July 12, 2024*
+
+* Added CSR/Private Key generation to the admin
+* Added a new field to the Certificate model to store the CSR used to generate the certificate
+
 2.0.0
 =====
 

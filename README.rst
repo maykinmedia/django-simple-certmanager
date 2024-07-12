@@ -1,7 +1,7 @@
 django-simple-certmanager
 =========================
 
-:Version: 2.0.0
+:Version: 2.0.1
 :Source: https://github.com/maykinmedia/django-simple-certmanager
 :Keywords: certificates
 
@@ -22,6 +22,7 @@ Features
 * Certificate introspection and validation
 * Certificate/key files stored in private media
 * Certificate/key files deleted when the database record is deleted
+* Generate Certificate Signing Requests (CSR) and private keys
 
 
 Installation

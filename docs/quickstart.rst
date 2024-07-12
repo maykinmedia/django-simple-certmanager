@@ -34,6 +34,12 @@ configuration.
 Whenever an instance is deleted (through the admin or code), the associated files are
 purged as well.
 
+You can now also generate a Certificate Signing Request (CSR) and a private key in the admin interface.
+
+Generated files are stored at your configured ``PRIVATE_ROOT`` directory.
+
+You can also download the CSR from the admin interface.
+
 **Programmatically**
 
 The ``Certificate`` model is the public API of the library.
