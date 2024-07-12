@@ -6,6 +6,7 @@ from .models import Certificate
 class CertificateAdminForm(forms.ModelForm):
     serial_number = forms.CharField(disabled=True, required=False)
     info = forms.CharField(disabled=True, required=False)
+    public_certificate = forms.FileField(required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
