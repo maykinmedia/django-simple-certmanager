@@ -31,6 +31,8 @@ dependencies = [
     "django>=3.2",
     "django-privates>=1.5",
     "cryptography>=35.0.0",
+    "types-pyOpenSSL>=24.1.0",
+    "pyOpenSSL>=24.1.0",
 ]
 
 [project.urls]
