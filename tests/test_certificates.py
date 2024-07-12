@@ -102,22 +102,26 @@ class CertificateTests(TestCase):
 
     def test_admin_validation_valid_csr(self):
         with open(TEST_FILES / "csr.pem", "r") as csr_f:
-            form = CertificateAdminForm(
-                {"label": "Test valid csr", "type": CertificateTypes.cert_only},
-                {"csr": File(csr_f)},
-            )
-        print(form.errors)
+            with open(TEST_FILES / "test.certificate", "r") as client_certificate_f:
+                form = CertificateAdminForm(
+                    {"label": "Test valid csr", "type": CertificateTypes.cert_only},
+                    {
+                        "csr": File(csr_f),
+                        "public_certificate": File(client_certificate_f),
+                    },
+                )
         self.assertTrue(form.is_valid())
 
     def test_admin_validation_invalid_csr(self):
-        with open(TEST_FILES / "test.certificate", "r") as client_certificate_f:
-            form = CertificateAdminForm(
-                {
-                    "label": "Test invalid csr",
-                    "type": CertificateTypes.cert_only,
-                },
-                {"csr": File(client_certificate_f)},
-            )
+        with open(TEST_FILES / "invalid_csr.pem", "r") as csr_f:
+            with open(TEST_FILES / "test.certificate", "r") as client_certificate_f:
+                form = CertificateAdminForm(
+                    {"label": "Test valid csr", "type": CertificateTypes.cert_only},
+                    {
+                        "csr": File(csr_f),
+                        "public_certificate": File(client_certificate_f),
+                    },
+                )
 
         self.assertFalse(form.is_valid())
 

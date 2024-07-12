@@ -64,6 +64,8 @@ def test_detail_view(temp_private_root, admin_client):
     html = response.content.decode("utf-8")
     doc = pq(html)
     uploads = doc(".file-upload")
+    print("Uploads:")
+    print(uploads.children())
 
     # check that public certificate is correctly displayed with link
     anchor = uploads.children()[0]
