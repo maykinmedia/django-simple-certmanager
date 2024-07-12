@@ -1,5 +1,7 @@
 import os
 
+DEBUG = True
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 SECRET_KEY = "so-secret-i-cant-believe-you-are-looking-at-this"
@@ -62,3 +64,7 @@ MEDIA_URL = "/media/"
 
 PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR, "private-media")
 PRIVATE_MEDIA_URL = "/private-media/"
+
+# FIXME : Replace this with a production-ready backend
+SENDFILE_ROOT = PRIVATE_MEDIA_ROOT
+SENDFILE_BACKEND = "django_sendfile.backends.development"

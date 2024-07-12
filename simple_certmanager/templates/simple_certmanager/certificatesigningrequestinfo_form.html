@@ -1,0 +1,17 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrahead %}
+<style>
+    .form-control {
+        width: 100%;
+    }
+</style>
+{% endblock extrahead %}
+
+{% block content %}
+<h1>Generate Certificate</h1>
+<form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Generate Certificate">
+</form>
+{% endblock content %}

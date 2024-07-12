@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+
+{% load admin_list i18n %}
+
+{% block object-tools-items %}
+{% if  %}
+<li><a href="{% url 'generate_certificate' %}">Generate Certificate</a></li>
+{% endif %}
+{{ block.super }}
+{% endblock %}

@@ -13,7 +13,14 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     model: type[Certificate]
     form = CertificateAdminForm
 
-    fields = ("label", "serial_number", "type", "public_certificate", "private_key")
+    fields = (
+        "label",
+        "serial_number",
+        "type",
+        "public_certificate",
+        "private_key",
+        "csr",
+    )
     list_display = (
         "get_label",
         "serial_number",
@@ -25,7 +32,7 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     search_fields = ("label", "type")
     readonly_fields = ("serial_number",)
 
-    private_media_fields = ("public_certificate", "private_key")
+    private_media_fields = ("public_certificate", "private_key", "csr")
     private_media_no_download_fields = ("private_key",)
 
     @admin.display(description=_("label"), ordering="label")

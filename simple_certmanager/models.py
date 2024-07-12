@@ -13,7 +13,11 @@ from privates.fields import PrivateMediaFileField
 from .constants import CertificateTypes
 from .mixins import DeleteFileFieldFilesMixin
 from .utils import load_pem_x509_private_key, pretty_print_certificate_components
-from .validators import PrivateKeyValidator, PublicCertValidator
+from .validators import (
+    CertificateSigningRequestValidator,
+    PrivateKeyValidator,
+    PublicCertValidator,
+)
 
 
 class Certificate(DeleteFileFieldFilesMixin, models.Model):
@@ -42,6 +46,20 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
         blank=True,
         upload_to="ssl_certs_keys/%Y/%m/%d",
         validators=[PrivateKeyValidator()],
+    )
+    csr = PrivateMediaFileField(
+        _("certificate signing request"),
+        help_text=_("The content of the certificate signing request"),
+        upload_to="ssl_certs_keys/%Y/%m/%d",
+        blank=True,
+        validators=[CertificateSigningRequestValidator()],
+    )
+    info = models.OneToOneField(
+        "CertificateSigningRequestInfo",
+        on_delete=models.CASCADE,
+        verbose_name=_("certificate information"),
+        help_text=_("Information about the certificate"),
+        null=True,
     )
 
     _certificate_obj: CryptographyCertificate | None = None
@@ -98,3 +116,35 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
         return key_pubkey == cert_pubkey
 
     is_valid_key_pair.boolean = True  # type: ignore
+
+
+class CertificateSigningRequestInfo(models.Model):
+    country_name = models.CharField(
+        _("country name"),
+        max_length=2,
+        help_text=_("Two-letter country code"),
+        default="NL",
+    )
+    organization_name = models.CharField(
+        _("organization name"),
+        max_length=100,
+        help_text=_("The name of the organization, e.g. 'Gementee Amsterdam'"),
+        blank=True,
+    )
+    state_or_province_name = models.CharField(
+        _("state or province name"),
+        max_length=100,
+        help_text=_("The state or province name, e.g. 'Noord-Holland'"),
+        blank=True,
+    )
+    email_address = models.EmailField(
+        _("email address"),
+        help_text=_("Email address for the certificate"),
+        blank=True,
+    )
+    common_name = models.CharField(
+        _("common name"),
+        max_length=100,
+        help_text=_("The common name for the certificate"),
+        blank=True,
+    )

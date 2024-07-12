@@ -3,7 +3,7 @@ from django.core.files import File
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
 
-from cryptography.x509 import load_pem_x509_certificate
+from cryptography.x509 import load_pem_x509_certificate, load_pem_x509_csr
 
 from .utils import load_pem_x509_private_key
 
@@ -46,3 +46,13 @@ class PrivateKeyValidator(PKIValidatorBase):
     @staticmethod
     def validate(file_content: bytes) -> None:
         load_pem_x509_private_key(file_content)
+
+
+class CertificateSigningRequestValidator(PKIValidatorBase):
+    message = _(
+        "Invalid file provided, expected a certificate signing request in PEM format"
+    )
+
+    @staticmethod
+    def validate(file_content: bytes) -> None:
+        load_pem_x509_csr(file_content)
