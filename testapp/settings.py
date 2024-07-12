@@ -10,7 +10,7 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": os.path.join(BASE_DIR, "simple_certmanager.db"),
-    }
+    },
 }
 
 INSTALLED_APPS = [
