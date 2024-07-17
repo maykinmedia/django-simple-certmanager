@@ -3,11 +3,13 @@ from pathlib import Path
 
 import pytest
 from cryptography import x509
-from cryptography.hazmat.primitives import asymmetric, hashes, serialization
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.serialization import BestAvailableEncryption
 
 
 @pytest.fixture(scope="session")
-def root_key() -> asymmetric.rsa.RSAPrivateKey:
+def root_key() -> rsa.RSAPrivateKey:
     "RSA key for the RootCA"
     key = gen_key()
     # with (Path(__file__).parent / "data" / "test.key").open("rb") as f:
@@ -33,8 +35,13 @@ def root_cert(root_key) -> x509.Certificate:
 
 
 @pytest.fixture
-def leaf_pem(root_cert: x509.Certificate, root_key) -> bytes:
-    "A valid pem encoded certificate directly issued by the Root CA"
+def leaf_keypair(
+    root_cert: x509.Certificate, root_key
+) -> tuple[rsa.RSAPrivateKey, bytes]:
+    """
+    A private key and valid pem encoded certificate directly issued by the Root CA
+    """
+    privkey = gen_key()
     leaf_cert = mkcert(
         subject=x509.Name(
             [
@@ -48,12 +55,30 @@ def leaf_pem(root_cert: x509.Certificate, root_key) -> bytes:
                 x509.NameAttribute(x509.oid.NameOID.COMMON_NAME, "widgits.example.org"),
             ]
         ),
-        subject_key=gen_key(),
+        subject_key=privkey,
         issuer=root_cert,
         issuer_key=root_key,
         can_issue=False,
     )
-    return to_pem(leaf_cert)
+    return privkey, to_pem(leaf_cert)
+
+
+@pytest.fixture
+def encrypted_keypair(
+    leaf_keypair: tuple[rsa.RSAPrivateKey, bytes]
+) -> tuple[bytes, bytes]:
+    """
+    A private key + certificate pair where the private key is encrypted.
+    """
+    key, cert_pem = leaf_keypair
+    # UNSURE if utf-8 is the encoding that is also used by openssl and friends
+    passphrase = "SUPERSECRET🔐".encode("utf-8")
+    encrypted_private_key_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=BestAvailableEncryption(passphrase),
+    )
+    return encrypted_private_key_pem, cert_pem
 
 
 @pytest.fixture
@@ -216,4 +241,4 @@ def to_pem(cert: x509.Certificate) -> bytes:
 
 
 def gen_key():
-    return asymmetric.rsa.generate_private_key(public_exponent=0x10001, key_size=2048)
+    return rsa.generate_private_key(public_exponent=0x10001, key_size=2048)
