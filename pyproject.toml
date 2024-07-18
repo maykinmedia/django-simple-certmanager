@@ -111,14 +111,10 @@ exclude_also = [
     "@(abc\\.)?abstractmethod",
     "raise NotImplementedError",
     "\\.\\.\\.",
-    "pass",
 ]
 omit = [
     "simple_certmanager/migrations/*",
 ]
-
-[tool.coverage.html]
-directory = "cover"
 
 [tool.mypy]
 plugins = ["mypy_django_plugin.main"]

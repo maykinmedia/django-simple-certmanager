@@ -13,7 +13,14 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     model: type[Certificate]
     form = CertificateAdminForm
 
-    fields = ("label", "serial_number", "type", "public_certificate", "private_key")
+    fields = (
+        "label",
+        "serial_number",
+        "type",
+        "public_certificate",
+        "private_key",
+        "private_key_passphrase",
+    )
     list_display = (
         "get_label",
         "serial_number",

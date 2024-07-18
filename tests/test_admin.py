@@ -1,15 +1,21 @@
 import logging
+from io import BytesIO
 from pathlib import Path
 
 from django.core.files import File
+from django.test import Client
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from pyquery import PyQuery as pq
+from pytest_django.asserts import assertContains
 
 from simple_certmanager.constants import CertificateTypes
 from simple_certmanager.models import Certificate
+from simple_certmanager.utils import decrypted_key_to_pem
 
 TEST_FILES = Path(__file__).parent / "data"
 
@@ -171,3 +177,107 @@ def test_detail_view_invalid_private_key(temp_private_root, admin_client, caplog
 
     assert response.status_code == 200
     assert caplog.records == []
+
+
+def test_upload_keypair_with_encrypted_key(
+    admin_client: Client, encrypted_keypair: tuple[bytes, bytes]
+):
+    url = reverse("admin:simple_certmanager_certificate_add")
+    key, cert = encrypted_keypair
+
+    response = admin_client.post(
+        url,
+        {
+            "label": "Encrypted key",
+            "type": CertificateTypes.key_pair,
+            "private_key": BytesIO(key),
+            "public_certificate": BytesIO(cert),
+            "private_key_passphrase": "SUPERSECRET🔐",
+        },
+    )
+
+    assert response.status_code == 302  # redirects back to list
+
+    # check that the key is decrypted in the created object
+    certificate = Certificate.objects.get()
+    assert not hasattr(certificate, "key_passphrase")  # not a model field!
+    with certificate.private_key.open("rb") as key_file:
+        try:
+            # we should be able to load the private key without password now
+            load_pem_private_key(key_file.read(), password=None)
+        except Exception:
+            pytest.fail("Expected the key to be stored unencrypted")
+
+
+def test_upload_keypair_with_encrypted_key_without_passphrase(
+    admin_client: Client, encrypted_keypair: tuple[bytes, bytes]
+):
+    url = reverse("admin:simple_certmanager_certificate_add")
+    key, cert = encrypted_keypair
+
+    response = admin_client.post(
+        url,
+        {
+            "label": "Encrypted key",
+            "type": CertificateTypes.key_pair,
+            "private_key": BytesIO(key),
+            "public_certificate": BytesIO(cert),
+            "private_key_passphrase": "",
+        },
+    )
+
+    assert response.status_code == 200  # validation errors
+    assertContains(
+        response,
+        _("Provide a passphrase to decrypt the private key."),
+    )
+
+
+def test_upload_keypair_with_encrypted_key_wrong_passphrase(
+    admin_client: Client, encrypted_keypair: tuple[bytes, bytes]
+):
+    url = reverse("admin:simple_certmanager_certificate_add")
+    key, cert = encrypted_keypair
+
+    response = admin_client.post(
+        url,
+        {
+            "label": "Encrypted key",
+            "type": CertificateTypes.key_pair,
+            "private_key": BytesIO(key),
+            "public_certificate": BytesIO(cert),
+            "private_key_passphrase": "letmein",
+        },
+    )
+
+    assert response.status_code == 200  # validation errors
+    assertContains(
+        response,
+        _("Could not decrypt the private key with the provided passphrase."),
+    )
+
+
+def test_upload_keypair_not_encrypted_with_passphrase(
+    admin_client: Client,
+    leaf_keypair: tuple[rsa.RSAPrivateKey, bytes],
+):
+    url = reverse("admin:simple_certmanager_certificate_add")
+    _key, cert = leaf_keypair
+    key = decrypted_key_to_pem(_key)
+
+    response = admin_client.post(
+        url,
+        {
+            "label": "Encrypted key",
+            "type": CertificateTypes.key_pair,
+            "private_key": BytesIO(key),
+            "public_certificate": BytesIO(cert),
+            "private_key_passphrase": "letmein",
+        },
+    )
+
+    assert response.status_code == 200  # validation errors
+    assertContains(
+        response,
+        _("The private key is not encrypted, a passphrase is not required."),
+    )
