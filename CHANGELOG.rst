@@ -2,6 +2,20 @@
 Changelog
 =========
 
+2.2.0
+=====
+
+*July 18 2024*
+
+Feature release: encrypted private keys
+
+Note: 2.1.0 was accidentally published to PyPI and has been yanked.
+
+* Added support for uploading of encrypted private keys. These keys require a passphrase
+  to be provided and are stored in unencrypted form.
+* Added a pytest plugin to expose certificate/key generation fixtures for downstream
+  packages.
+
 2.0.0
 =====
 
