@@ -6,6 +6,7 @@ from .models import Certificate
 from .utils import (
     BadPassword,
     KeyIsEncrypted,
+    KeyIsNotEncrypted,
     decrypted_key_to_pem,
     load_pem_x509_private_key,
 )
@@ -14,7 +15,7 @@ from .validators import PrivateKeyValidator
 
 def _read_and_reset(file_like: File):
     """
-    Ensure that we read a file field from the start of the file and reset the pointer.
+    Read a file field from the start of the file and set the pointer to the start.
     """
     file_like.seek(0)
     content = file_like.read()
@@ -65,6 +66,16 @@ class CertificateAdminForm(forms.ModelForm):
                 self.add_error(
                     "private_key_passphrase",
                     _("Provide a passphrase to decrypt the private key."),
+                )
+            except KeyIsNotEncrypted:
+                # instead of ignoring the password, report back as the user may have
+                # accidentally uploaded the wrong key if they expected a password
+                self.add_error(
+                    "private_key_passphrase",
+                    _(
+                        "The private key is not encrypted, a passphrase is not "
+                        "required."
+                    ),
                 )
             except BadPassword:
                 self.add_error(

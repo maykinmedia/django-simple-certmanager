@@ -20,6 +20,10 @@ class KeyIsEncrypted(PrivateKeyError):
     pass
 
 
+class KeyIsNotEncrypted(PrivateKeyError):
+    pass
+
+
 class BadPassword(PrivateKeyError):
     pass
 
@@ -34,28 +38,22 @@ def load_pem_x509_private_key(data: bytes, password: str | None = None):
     _password = password.encode("utf-8") if password is not None else None
     try:
         return load_pem_private_key(data, password=_password)
+
+    # The exception type determines the kind of problem, relying on the exception
+    # messages themselves is too fragile. See documentation:
+    # https://cryptography.io/en/42.0.8/hazmat/primitives/asymmetric/
+    # serialization/#cryptography.hazmat.primitives.serialization.load_pem_private_key
     except TypeError as exc:
-        if (
-            password is None
-            and exc.args
-            and (err := exc.args[0])
-            and "Password was not given but private key is encrypted" in err
-        ):
-            raise KeyIsEncrypted("Private key is encrypted") from exc
-        # an error we can't handle, so just re-raise and let it bubble up
+        if _password is None:
+            raise KeyIsEncrypted("No password for encrypted key given") from exc
         else:
-            raise
+            raise KeyIsNotEncrypted("Password given but key is not encrypted") from exc
     except ValueError as exc:
-        if (
-            password is not None
-            and exc.args
-            and (err := exc.args[0])
-            and "Incorrect password?" in err
-        ):
-            raise BadPassword("Could not decrypt with the given password") from exc
-        # an error we can't handle, so just re-raise and let it bubble up
-        else:
+        if _password is None:
             raise
+        # could be wrong password, could also be the right password but something went
+        # wrong in the encrypted data...
+        raise BadPassword("Could not decrypt with the given password") from exc
 
 
 def decrypted_key_to_pem(key: PrivateKeyTypes):
