@@ -40,6 +40,9 @@ Documentation = "http://django-simple-certmanager.readthedocs.io/en/latest/"
 "Source Code" = "https://github.com/maykinmedia/django-simple-certmanager"
 Changelog = "https://github.com/maykinmedia/django-simple-certmanager/blob/main/CHANGELOG.rst"
 
+[project.entry-points.pytest11]
+simple_certmanager = "simple_certmanager.test.plugin"
+
 [project.optional-dependencies]
 # These are not the test requirements! They are extras to be installed when making use of `simple_certmanager.test`
 testutils = [
