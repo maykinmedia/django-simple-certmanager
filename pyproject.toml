@@ -111,7 +111,6 @@ exclude_also = [
     "@(abc\\.)?abstractmethod",
     "raise NotImplementedError",
     "\\.\\.\\.",
-    "pass",
 ]
 omit = [
     "simple_certmanager/migrations/*",
