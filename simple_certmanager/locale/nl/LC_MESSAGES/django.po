@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-15 08:09-0500\n"
+"POT-Creation-Date: 2024-07-18 09:15-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,23 +18,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: admin.py:31 models.py:21
+#: admin.py:38 models.py:21
 msgid "label"
 msgstr "label"
 
-#: admin.py:35
+#: admin.py:42
 msgid "serial number"
 msgstr "serienummer"
 
-#: admin.py:42 admin.py:51
+#: admin.py:49 admin.py:58
 msgid "file not found"
 msgstr "bestand bestaat niet"
 
-#: admin.py:44
+#: admin.py:51
 msgid "expiry date"
 msgstr "vervaldatum"
 
-#: admin.py:53
+#: admin.py:60
 msgid "valid key pair"
 msgstr "geldig sleutelpaar"
 
@@ -45,6 +45,26 @@ msgstr "Sleutelpaar"
 #: constants.py:7
 msgid "Certificate only"
 msgstr "Enkel certificaat"
+
+#: forms.py:29
+msgid "Passphrase"
+msgstr "Wachtwoordzin"
+
+#: forms.py:30
+msgid "Passphrase to decrypt the private key if it's encrypted."
+msgstr "Wachtwoordzin om de privésleutel te ontsleutelen als die versleuteld is."
+
+#: forms.py:68
+msgid "Provide a passphrase to decrypt the private key."
+msgstr "Je moet de wachtwoordzin opgegeven om de privésleutel te ontsleutelen."
+
+#: forms.py:76
+msgid "The private key is not encrypted, a passphrase is not required."
+msgstr "De privésleutel is niet versleuteld, je mag geen wachtwoordzin opgegeven."
+
+#: forms.py:84
+msgid "Could not decrypt the private key with the provided passphrase."
+msgstr "De privésleutel kon niet ontsleuteld worden met de opgegeven wachtwoordzin."
 
 #: models.py:23
 msgid "Recognisable label for the certificate"
@@ -91,10 +111,18 @@ msgstr "(label ontbreekt)"
 msgid "Invalid file provided"
 msgstr "Ongeldig bestand opgegeven"
 
-#: validators.py:36
+#: validators.py:35
 msgid "Invalid file provided, expected a certificate in PEM format"
-msgstr "Ongeldig bestand, het bestand moet een certificaat in PEM-formaat zijn."
+msgstr ""
+"Ongeldig bestand, het bestand moet een certificaat in PEM-formaat zijn."
 
-#: validators.py:44
+#: validators.py:42
 msgid "Invalid file provided, expected a private key in PEM format"
-msgstr "Ongeldig bestand, het bestand moet een privésleutel in PEM-formaat zijn."
+msgstr ""
+"Ongeldig bestand, het bestand moet een privésleutel in PEM-formaat zijn."
+
+#: validators.py:56
+msgid "Private key may not be encrypted."
+msgstr ""
+"De privésleutel mag niet versleuteld zijn. Indien je een versleutelde privésleutel "
+"toevoegt, zorg er dan voor dat je de juiste wachtwoordzin opgeeft."
