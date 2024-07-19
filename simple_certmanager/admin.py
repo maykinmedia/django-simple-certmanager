@@ -25,6 +25,7 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
         "get_label",
         "serial_number",
         "type",
+        "valid_from",
         "expiry_date",
         "is_valid_key_pair",
     )
@@ -45,6 +46,15 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
         # alias model property to catch errors
         try:
             return obj.serial_number
+        except FileNotFoundError:
+            return _("file not found")
+
+    @admin.display(description=_("valid from"))
+    @suppress_cryptography_errors
+    def valid_from(self, obj: Certificate):
+        # alias model property to catch errors
+        try:
+            return obj.valid_from
         except FileNotFoundError:
             return _("file not found")
 
