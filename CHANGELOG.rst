@@ -2,10 +2,20 @@
 Changelog
 =========
 
+2.3.0
+=====
+
+*July 19, 2024*
+
+Small feature release
+
+* The ``Certificate`` model now publicly exposes the ``certificate`` attribute, which
+  returns the certificate loaded through ``cryptography``.
+
 2.2.0
 =====
 
-*July 18 2024*
+*July 18, 2024*
 
 Feature release: encrypted private keys
 

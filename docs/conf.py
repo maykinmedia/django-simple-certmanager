@@ -30,7 +30,7 @@ copyright = "2022, Maykin Media"
 author = "Maykin Media"
 
 # The full version, including alpha/beta/rc tags
-release = "2.2.0"
+release = "2.3.0"
 
 
 # -- General configuration ---------------------------------------------------
