@@ -55,7 +55,13 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
         return self.label or gettext("(missing label)")
 
     @property
-    def _certificate(self) -> CryptographyCertificate:
+    def certificate(self) -> CryptographyCertificate:
+        """
+        Load and return the x509 certificate.
+
+        :raises ValueError: if no certificate file is associated with the instance or
+          if the certificate could not be loaded by ``cryptography``.
+        """
         if self._certificate_obj is None:
             with self.public_certificate.open(mode="rb") as certificate_f:
                 self._certificate_obj = load_pem_x509_certificate(certificate_f.read())
@@ -69,22 +75,28 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
         return self._private_key_obj
 
     @property
+    def valid_from(self) -> datetime:
+        # TODO: should probably be stored in a DB column after saving the file so
+        # we can query on it to report (nearly) expired certificates.
+        return self.certificate.not_valid_before_utc
+
+    @property
     def expiry_date(self) -> datetime:
         # TODO: should probably be stored in a DB column after saving the file so
         # we can query on it to report (nearly) expired certificates.
-        return self._certificate.not_valid_after_utc
+        return self.certificate.not_valid_after_utc
 
     @property
     def issuer(self) -> str:
-        return pretty_print_certificate_components(self._certificate.issuer)
+        return pretty_print_certificate_components(self.certificate.issuer)
 
     @property
     def subject(self) -> str:
-        return pretty_print_certificate_components(self._certificate.subject)
+        return pretty_print_certificate_components(self.certificate.subject)
 
     @property
     def serial_number(self) -> str:
-        x509sn = self._certificate.serial_number
+        x509sn = self.certificate.serial_number
         sn = hex(x509sn)[2:].upper()
         bytes = (sn[i : i + 2] for i in range(0, len(sn), 2))
         return ":".join(bytes)
@@ -94,7 +106,7 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
             return None
 
         key_pubkey = self._private_key.public_key()
-        cert_pubkey = self._certificate.public_key()
+        cert_pubkey = self.certificate.public_key()
         return key_pubkey == cert_pubkey
 
     is_valid_key_pair.boolean = True  # type: ignore

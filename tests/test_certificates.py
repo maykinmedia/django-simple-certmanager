@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from io import BytesIO
 from pathlib import Path
 
 from django.contrib.admin import AdminSite
@@ -6,14 +7,29 @@ from django.contrib.auth.models import User
 from django.core.files import File
 from django.test import RequestFactory, TestCase, TransactionTestCase
 
+import pytest
+from cryptography.x509 import Certificate as CryptographyCertificate
 from privates.test import temp_private_root
 
 from simple_certmanager.admin import CertificateAdmin
 from simple_certmanager.constants import CertificateTypes
 from simple_certmanager.forms import CertificateAdminForm
 from simple_certmanager.models import Certificate
+from simple_certmanager.test.certificate_generation import key_to_pem
 
 TEST_FILES = Path(__file__).parent / "data"
+
+
+@pytest.fixture
+def cert_with_keypair(db, temp_private_root, leaf_keypair):
+    key, cert_pem = leaf_keypair
+    key_pem = key_to_pem(key)
+    return Certificate.objects.create(
+        label="Test certificate",
+        type=CertificateTypes.key_pair,
+        public_certificate=File(BytesIO(cert_pem), name="cert.pem"),
+        private_key=File(BytesIO(key_pem), name="key.pem"),
+    )
 
 
 @temp_private_root()
@@ -205,3 +221,28 @@ class TestCertificateFilesDeletion(TransactionTestCase):
         certificate.delete()
 
         self.assertFalse(storage.exists(file_path))
+
+
+def test_load_certificate_ok(cert_with_keypair: Certificate):
+    result = cert_with_keypair.certificate
+
+    assert isinstance(result, CryptographyCertificate)
+
+
+def test_load_certificate_no_certificate():
+    instance = Certificate(public_certificate="", type=CertificateTypes.cert_only)
+
+    with pytest.raises(ValueError):
+        instance.certificate
+
+
+@pytest.mark.django_db
+def test_load_certificate_invalid_certificate():
+    instance = Certificate.objects.create(
+        label="Test certificate",
+        type=CertificateTypes.cert_only,
+        public_certificate=File(BytesIO(b"bwoken"), name="cert.pem"),
+    )
+
+    with pytest.raises(ValueError):
+        instance.certificate
