@@ -1,5 +1,7 @@
 import os
 
+DEBUG = True
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 SECRET_KEY = "so-secret-i-cant-believe-you-are-looking-at-this"
@@ -8,7 +10,7 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": os.path.join(BASE_DIR, "simple_certmanager.db"),
-    }
+    },
 }
 
 INSTALLED_APPS = [
@@ -62,3 +64,6 @@ MEDIA_URL = "/media/"
 
 PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR, "private-media")
 PRIVATE_MEDIA_URL = "/private-media/"
+
+SENDFILE_ROOT = PRIVATE_MEDIA_ROOT
+SENDFILE_BACKEND = "django_sendfile.backends.development"

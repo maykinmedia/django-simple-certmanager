@@ -22,7 +22,6 @@ Installation
    correctly - the TLS certificates and keys are stored outside of ``settings.MEDIA_ROOT``
    for security reasons.
 
-
 Usage
 -----
 
@@ -33,6 +32,14 @@ configuration.
 
 Whenever an instance is deleted (through the admin or code), the associated files are
 purged as well.
+
+Generate a Certificate Signing Request (CSR) and a private key in the admin interface.
+
+Generated files are stored at your configured ``PRIVATE_ROOT`` directory.
+
+Download the CSR from the admin interface.
+
+Associate TLS certificates with their CSR.
 
 **Programmatically**
 

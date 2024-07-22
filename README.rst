@@ -22,7 +22,8 @@ Features
 * Certificate introspection and validation
 * Certificate/key files stored in private media
 * Certificate/key files deleted when the database record is deleted
-
+* Generate Certificate Signing Requests (CSR).
+* Associate TLS certificates with their CSR.
 
 Installation
 ============

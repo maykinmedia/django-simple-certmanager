@@ -47,6 +47,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 reports/
+tests/data/*
 
 # Translations
 # *.mo -> we want to package these along

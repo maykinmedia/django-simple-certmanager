@@ -94,4 +94,4 @@ def cert_to_pem(cert: x509.Certificate) -> bytes:
 
 
 def gen_key() -> rsa.RSAPrivateKey:
-    return rsa.generate_private_key(public_exponent=0x10001, key_size=2048)
+    return rsa.generate_private_key(public_exponent=0x10001, key_size=4096)

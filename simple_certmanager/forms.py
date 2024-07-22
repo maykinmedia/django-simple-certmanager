@@ -2,7 +2,11 @@ from django import forms
 from django.core.files import File
 from django.utils.translation import gettext_lazy as _
 
-from .models import Certificate
+from cryptography import x509
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric import padding
+
+from .models import Certificate, SigningRequest
 from .utils import (
     BadPassword,
     KeyIsEncrypted,
@@ -93,3 +97,61 @@ class CertificateAdminForm(forms.ModelForm):
                     private_key.truncate(0)
                     private_key.write(decrypted_key_data)
                     private_key.seek(0)
+
+
+class SigningRequestAdminForm(forms.ModelForm):
+    certificate = forms.FileField(
+        required=False,
+        help_text="Upload the public certificate file here. "
+        "This will be used to verify the signature against the CSR "
+        "and create the certificate instance.",
+    )
+
+    class Meta:
+        model = SigningRequest
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Check if private key and CSR are empty
+        private_key_empty = not self.instance.private_key
+        csr_empty = not self.instance.csr
+        if private_key_empty or csr_empty:
+            self.fields["certificate"].widget = forms.HiddenInput()
+
+    def clean(self):
+        cleaned_data = self.cleaned_data
+        certificate_file = cleaned_data.get("certificate")
+
+        if getattr(self.instance, "certificate", None) and certificate_file:
+            self.add_error(
+                "certificate", "This signing request already has a certificate."
+            )
+            return cleaned_data
+
+        if certificate_file:
+            try:
+                certificate_data = certificate_file.read()
+                certificate = x509.load_pem_x509_certificate(certificate_data)
+                csr = x509.load_pem_x509_csr(self.instance.csr.encode())
+                # Check if the certificate matches the CSR
+                public_key = csr.public_key()
+                public_key.verify(
+                    certificate.signature,
+                    certificate.tbs_certificate_bytes,
+                    padding.PKCS1v15(),
+                    certificate.signature_hash_algorithm,
+                )
+            except ValueError:
+                self.add_error(
+                    "certificate", "Invalid certificate. Check the file format."
+                )
+            except InvalidSignature:
+                self.add_error(
+                    "certificate",
+                    "Certificate does not match the signature from the actual CSR.",
+                )
+            except Exception:
+                self.add_error("certificate", "An unexpected error occurred.")
+
+        return cleaned_data
