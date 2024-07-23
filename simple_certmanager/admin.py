@@ -1,11 +1,87 @@
+from io import BytesIO
+from zipfile import ZipFile
+
 from django.contrib import admin
+from django.http import HttpResponse, HttpResponseRedirect
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from privates.admin import PrivateMediaMixin
 
 from .forms import CertificateAdminForm
-from .models import Certificate
+from .models import Certificate, SigningRequest
 from .utils import suppress_cryptography_errors
+
+
+def download_csr(modeladmin, request, queryset):
+    if (num := len(queryset)) > 1:
+        zip_file = BytesIO()
+        with ZipFile(zip_file, "w") as zipf:
+            for csr in queryset:
+                csr_content = csr.csr
+                csr_filename = f"{csr.common_name}_csr.pem"
+                zipf.writestr(csr_filename, csr_content)
+        zip_file.seek(0)
+        response = HttpResponse(zip_file, content_type="application/zip")
+        response["Content-Disposition"] = 'attachment; filename="csr.zip"'
+        return response
+    elif num == 1:
+        csr = (first := queryset[0]).csr
+        response = HttpResponse(csr, content_type="application/x-pem-file")
+        response["Content-Disposition"] = (
+            f'attachment; filename="{first.common_name}_csr.pem"'
+        )
+        return response
+    else:
+        modeladmin.message_user(
+            request,
+            "No CSR selected.",
+        )
+
+
+@admin.register(SigningRequest)
+class SigningRequestAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (
+            "Certificate Signing Request Information",
+            {
+                "fields": [
+                    "common_name",
+                    "organization_name",
+                    "country_name",
+                    "state_or_province_name",
+                    "email_address",
+                ],
+                "description": (
+                    "Fill in this information and click 'SAVE' to generate the CSR."
+                ),
+            },
+        ),
+        (
+            "Certificate Signing Request Content",
+            {
+                "fields": [
+                    "csr",
+                ],
+            },
+        ),
+    )
+    list_display = (
+        "common_name",
+        "organization_name",
+        "country_name",
+        "state_or_province_name",
+        "email_address",
+    )
+    list_filter = ("organization_name", "state_or_province_name")
+    search_fields = ("common_name", "organization_name")
+    readonly_fields = ("csr",)
+    actions = [download_csr]
+
+    def response_add(self, request, obj, post_url_continue=None):
+        return HttpResponseRedirect(
+            reverse("admin:simple_certmanager_signingrequest_change", args=(obj.pk,))
+        )
 
 
 @admin.register(Certificate)

@@ -34,6 +34,8 @@ configuration.
 Whenever an instance is deleted (through the admin or code), the associated files are
 purged as well.
 
+You can create and download ``Certificate Signing Request``s (CSR) through the admin as well.
+
 **Programmatically**
 
 The ``Certificate`` model is the public API of the library.
