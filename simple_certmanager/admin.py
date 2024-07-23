@@ -2,8 +2,9 @@ from io import BytesIO
 from zipfile import ZipFile
 
 from django.contrib import admin
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import FileResponse, HttpResponseRedirect
 from django.urls import reverse
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from privates.admin import PrivateMediaMixin
@@ -19,23 +20,25 @@ def download_csr(modeladmin, request, queryset):
         with ZipFile(zip_file, "w") as zipf:
             for csr in queryset:
                 csr_content = csr.csr
-                csr_filename = f"{csr.common_name}_csr.pem"
+                csr_filename = f"{slugify(csr.common_name)}_{csr.pk}_csr.pem"
                 zipf.writestr(csr_filename, csr_content)
         zip_file.seek(0)
-        response = HttpResponse(zip_file, content_type="application/zip")
-        response["Content-Disposition"] = 'attachment; filename="csr.zip"'
-        return response
-    elif num == 1:
-        csr = (first := queryset[0]).csr
-        response = HttpResponse(csr, content_type="application/x-pem-file")
-        response["Content-Disposition"] = (
-            f'attachment; filename="{first.common_name}_csr.pem"'
+        return FileResponse(
+            zip_file,
+            as_attachment=True,
+            filename="csr.zip",
         )
-        return response
+    elif num == 1:
+        csr = queryset[0].csr
+        return FileResponse(
+            BytesIO(csr.encode()),
+            as_attachment=True,
+            filename=f"{slugify(queryset[0].common_name)}_{queryset[0].pk}_csr.pem",
+        )
     else:
         modeladmin.message_user(
             request,
-            "No CSR selected.",
+            _("No CSR selected."),
         )
 
 
@@ -43,7 +46,7 @@ def download_csr(modeladmin, request, queryset):
 class SigningRequestAdmin(admin.ModelAdmin):
     fieldsets = (
         (
-            "Certificate Signing Request Information",
+            _("Subject information"),
             {
                 "fields": [
                     "common_name",
@@ -53,12 +56,12 @@ class SigningRequestAdmin(admin.ModelAdmin):
                     "email_address",
                 ],
                 "description": (
-                    "Fill in this information and click 'SAVE' to generate the CSR."
+                    _("Fill in this information and click 'SAVE' to generate the CSR.")
                 ),
             },
         ),
         (
-            "Certificate Signing Request Content",
+            _("Certificate Signing Request Content"),
             {
                 "fields": [
                     "csr",

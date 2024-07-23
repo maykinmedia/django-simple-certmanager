@@ -1,12 +1,10 @@
-from django.contrib.admin.sites import AdminSite
-from django.http import HttpResponse
+from django.http import FileResponse
 from django.urls import reverse
 
 import pytest
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
-from simple_certmanager.admin import SigningRequestAdmin, download_csr
 from simple_certmanager.models import SigningRequest
 
 
@@ -31,7 +29,7 @@ def test_admin_create_signing_request(admin_client, db):
 
     assert response.status_code == 200
 
-    signing_request = SigningRequest.objects.last()
+    signing_request = SigningRequest.objects.get()
     assert signing_request is not None
     assert signing_request.private_key != ""
     assert signing_request.csr != ""
@@ -81,48 +79,57 @@ def test_generate_csr():
     )
 
 
+@pytest.mark.django_db
 def test_generate_private_key():
+    # A new signing request should not have a private key
     signing_request = SigningRequest(common_name="test.com")
     assert signing_request.private_key == ""
+
+    # Generating a private key should populate the private key field
     signing_request.generate_private_key()
+    saved_private_key = signing_request.private_key
     assert signing_request.private_key != ""
     assert "BEGIN PRIVATE KEY" in signing_request.private_key
 
+    # Additional saves do not overwrite the private key
+    signing_request.save()
+    assert signing_request.private_key == saved_private_key
+
 
 @pytest.mark.django_db
-def test_download_csr_single():
-    site = AdminSite()
-    admin = SigningRequestAdmin(SigningRequest, site)
-    request = None  # Simulate a Django request object
+def test_download_csr_single(admin_client):
     signing_request = SigningRequest.objects.create(
         common_name="Test", csr="CSR Content"
     )
-    queryset = SigningRequest.objects.filter(pk=signing_request.pk)
 
-    response = download_csr(admin, request, queryset)
+    url = reverse("admin:simple_certmanager_signingrequest_changelist")
+    response = admin_client.post(
+        url, {"action": "download_csr", "_selected_action": [signing_request.pk]}
+    )
 
-    assert isinstance(response, HttpResponse)
-    assert response["Content-Type"] == "application/x-pem-file"
+    assert isinstance(response, FileResponse)
+    assert response["Content-Type"] == "application/pem-certificate-chain"
     assert "attachment; filename=" in response["Content-Disposition"]
 
 
 @pytest.mark.django_db
-def test_download_csr_multiple():
-    site = AdminSite()
-    admin = SigningRequestAdmin(SigningRequest, site)
-    request = None
+def test_download_csr_multiple(admin_client):
     signing_request1 = SigningRequest.objects.create(
         common_name="Test", csr="CSR Content"
     )
     signing_request2 = SigningRequest.objects.create(
         common_name="Test2", csr="CSR Content"
     )
-    queryset = SigningRequest.objects.filter(
-        pk__in=[signing_request1.pk, signing_request2.pk]
+
+    url = reverse("admin:simple_certmanager_signingrequest_changelist")
+    response = admin_client.post(
+        url,
+        {
+            "action": "download_csr",
+            "_selected_action": [signing_request1.pk, signing_request2.pk],
+        },
     )
 
-    response = download_csr(admin, request, queryset)
-
-    assert isinstance(response, HttpResponse)
+    assert isinstance(response, FileResponse)
     assert response["Content-Type"] == "application/zip"
     assert "attachment; filename=" in response["Content-Disposition"]

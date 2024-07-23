@@ -10,9 +10,9 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
 from cryptography.x509 import (
     Certificate as CryptographyCertificate,
+    NameOID,
     load_pem_x509_certificate,
 )
-from cryptography.x509.oid import NameOID
 from privates.fields import PrivateMediaFileField
 
 from .constants import CertificateTypes
@@ -105,7 +105,10 @@ class SigningRequest(models.Model):
             self.private_key = private_key_file_bytes.decode()
 
     def __str__(self):
-        return f"Signing Request {self.pk} for {self.common_name}"
+        return _("Signing Request #%(pk)s for %(common_name)s") % {
+            "pk": self.pk,
+            "common_name": self.common_name,
+        }
 
 
 class Certificate(DeleteFileFieldFilesMixin, models.Model):
