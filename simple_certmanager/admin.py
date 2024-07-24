@@ -54,12 +54,15 @@ class SigningRequestAdmin(admin.ModelAdmin):
                     "email_address",
                 ),
                 "description": (
-                    _("Fill in this information and click 'SAVE' to generate the CSR.")
+                    _(
+                        "The CSR will be generated after entering"
+                        " the information and submitting the data."
+                    )
                 ),
             },
         ),
         (
-            _("Certificate Signing Request Content"),
+            _("Signing Request (CSR)"),
             {
                 "fields": ("csr",),
             },
@@ -77,7 +80,7 @@ class SigningRequestAdmin(admin.ModelAdmin):
     readonly_fields = ("csr",)
     actions = [download_csr]
 
-    def response_add(self, request, obj, post_url_continue=None):
+    def response_post_save_add(self, request, obj, post_url_continue=None):
         return HttpResponseRedirect(
             reverse("admin:simple_certmanager_signingrequest_change", args=(obj.pk,))
         )
