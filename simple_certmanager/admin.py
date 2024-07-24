@@ -48,13 +48,13 @@ class SigningRequestAdmin(admin.ModelAdmin):
         (
             _("Subject information"),
             {
-                "fields": [
+                "fields": (
                     "common_name",
                     "organization_name",
                     "country_name",
                     "state_or_province_name",
                     "email_address",
-                ],
+                ),
                 "description": (
                     _("Fill in this information and click 'SAVE' to generate the CSR.")
                 ),
@@ -63,9 +63,7 @@ class SigningRequestAdmin(admin.ModelAdmin):
         (
             _("Certificate Signing Request Content"),
             {
-                "fields": [
-                    "csr",
-                ],
+                "fields": ("csr",),
             },
         ),
     )
