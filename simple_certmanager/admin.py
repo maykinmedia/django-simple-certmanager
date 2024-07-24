@@ -15,7 +15,7 @@ from .utils import suppress_cryptography_errors
 
 
 def download_csr(modeladmin, request, queryset):
-    if (num := len(queryset)) > 1:
+    if len(queryset) > 1:
         zip_file = BytesIO()
         with ZipFile(zip_file, "w") as zipf:
             for csr in queryset:
@@ -28,17 +28,15 @@ def download_csr(modeladmin, request, queryset):
             as_attachment=True,
             filename="csr.zip",
         )
-    elif num == 1:
+    else:
+        # At this point, we know there is only one item in the queryset
+        # Django actions are only available when one or more items are selected
+        # In other words, the queryset can't be empty
         csr = queryset[0].csr
         return FileResponse(
             BytesIO(csr.encode()),
             as_attachment=True,
             filename=f"{slugify(queryset[0].common_name)}_{queryset[0].pk}_csr.pem",
-        )
-    else:
-        modeladmin.message_user(
-            request,
-            _("No CSR selected."),
         )
 
 

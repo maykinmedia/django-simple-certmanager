@@ -41,8 +41,12 @@ def test_save_generates_private_key_and_csr(signing_request):
     assert signing_request.private_key == ""
     assert signing_request.csr == ""
     signing_request.save()
+    saved_private_key = signing_request.private_key
     assert signing_request.private_key != ""
     assert signing_request.csr != ""
+    # Additional saves do not overwrite the private key
+    signing_request.save()
+    assert signing_request.private_key == saved_private_key
 
 
 @pytest.mark.django_db
