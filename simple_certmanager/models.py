@@ -10,7 +10,7 @@ from cryptography.x509 import (
 )
 from privates.fields import PrivateMediaFileField
 
-from simple_certmanager.csr_generation import generate_csr_and_private_key
+from simple_certmanager.csr_generation import generate_private_key_with_csr
 
 from .constants import CertificateTypes
 from .mixins import DeleteFileFieldFilesMixin
@@ -32,6 +32,9 @@ class SigningRequest(models.Model):
     state_or_province_name = models.CharField(
         max_length=100, help_text=_("The state or province name"), blank=True
     )
+    locality_name = models.CharField(
+        max_length=100, help_text=_("The locality name"), blank=True
+    )
     email_address = models.EmailField(
         help_text=_("Email address for the certificate"), blank=True
     )
@@ -46,15 +49,35 @@ class SigningRequest(models.Model):
         blank=True,
     )
 
-    def save(self, *args, **kwargs):
-        generate_csr_and_private_key(self)
-        super().save(*args, **kwargs)
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(
+                    models.Q(csr="", private_key="")
+                    | (~models.Q(csr="") & ~models.Q(private_key=""))
+                ),
+                name="csr_and_private_key_must_be_set_together",
+            )
+        ]
 
     def __str__(self):
         return _("Signing Request #{pk} for {common_name}").format(
             pk=self.pk,
             common_name=self.common_name,
         )
+
+    def save(self, *args, **kwargs):
+        # we generate private key + csr as one atomic unit
+        if not self.private_key:
+            self.private_key, self.csr = generate_private_key_with_csr(
+                common_name=self.common_name,
+                organization_name=self.organization_name,
+                locality=self.locality_name,
+                state_or_province=self.state_or_province_name,
+                country=self.country_name,
+                email=self.email_address,
+            )
+        super().save(*args, **kwargs)
 
 
 class Certificate(DeleteFileFieldFilesMixin, models.Model):

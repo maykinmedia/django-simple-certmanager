@@ -18,6 +18,12 @@ def signing_request():
 
 
 @pytest.mark.django_db
+def test_creating_signing_request_without_common_name_fails():
+    with pytest.raises(Exception):
+        SigningRequest.objects.create()
+
+
+@pytest.mark.django_db
 def test_admin_create_signing_request(admin_client, db):
     add_url = reverse("admin:simple_certmanager_signingrequest_add")
 
@@ -86,25 +92,16 @@ def test_generate_csr():
 
 @pytest.mark.django_db
 def test_generate_private_key():
-    # A new signing request should not have a private key
-    signing_request = SigningRequest(common_name="test.com")
-    assert signing_request.private_key == ""
+    saved_private_key = generate_private_key()
 
-    # Generating a private key should populate the private key field
-    generate_private_key(signing_request)
-    saved_private_key = signing_request.private_key
-    assert signing_request.private_key != ""
-    assert "BEGIN PRIVATE KEY" in signing_request.private_key
-
-    # Additional saves do not overwrite the private key
-    signing_request.save()
-    assert signing_request.private_key == saved_private_key
+    assert saved_private_key != ""
+    assert "BEGIN PRIVATE KEY" in saved_private_key
 
 
 @pytest.mark.django_db
 def test_download_csr_single(admin_client):
     signing_request = SigningRequest.objects.create(
-        common_name="Test", csr="CSR Content"
+        common_name="Test", country_name="NL"
     )
 
     url = reverse("admin:simple_certmanager_signingrequest_changelist")
@@ -116,15 +113,24 @@ def test_download_csr_single(admin_client):
     assert response["Content-Type"] == "application/pem-certificate-chain"
     assert "attachment; filename=" in response["Content-Disposition"]
 
+    # Load the CSR and assert the attributes
+    csr_content = BytesIO(b"".join(response.streaming_content))
+    csr = x509.load_pem_x509_csr(csr_content.read(), default_backend())
+    assert (
+        csr.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value == "Test"
+    )
+    assert (
+        csr.subject.get_attributes_for_oid(x509.NameOID.COUNTRY_NAME)[0].value == "NL"
+    )
+
 
 @pytest.mark.django_db
 def test_download_csr_multiple(admin_client):
-    csr_content = open("tests/data/valid_csr.pem").read()
     signing_request1 = SigningRequest.objects.create(
-        common_name="Test", csr=csr_content
+        common_name="test.com", country_name="NL"
     )
     signing_request2 = SigningRequest.objects.create(
-        common_name="Test2", csr=csr_content
+        common_name="test2.com", country_name="FR"
     )
 
     url = reverse("admin:simple_certmanager_signingrequest_changelist")
@@ -150,15 +156,9 @@ def test_download_csr_multiple(admin_client):
         for csr_file in csr_files:
             csr_content = zip_file.read(csr_file)
             csr = x509.load_pem_x509_csr(csr_content, default_backend())
-
-            # Assert the attributes of the CSR
-            # Common name is set to test.com in the test CSR
-            # Country name is set to NL in the test CSR
-            assert (
-                csr.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value
-                == "test.com"
-            )
-            assert (
-                csr.subject.get_attributes_for_oid(x509.NameOID.COUNTRY_NAME)[0].value
-                == "NL"
-            )
+            assert csr.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[
+                0
+            ].value in ["test.com", "test2.com"]
+            assert csr.subject.get_attributes_for_oid(x509.NameOID.COUNTRY_NAME)[
+                0
+            ].value in ["NL", "FR"]

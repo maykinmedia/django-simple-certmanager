@@ -51,6 +51,7 @@ class SigningRequestAdmin(admin.ModelAdmin):
                     "organization_name",
                     "country_name",
                     "state_or_province_name",
+                    "locality_name",
                     "email_address",
                 ),
                 "description": (
@@ -73,10 +74,11 @@ class SigningRequestAdmin(admin.ModelAdmin):
         "organization_name",
         "country_name",
         "state_or_province_name",
+        "locality_name",
         "email_address",
     )
-    list_filter = ("organization_name", "state_or_province_name")
-    search_fields = ("common_name", "organization_name")
+    list_filter = ("organization_name", "state_or_province_name", "locality_name")
+    search_fields = ("common_name", "organization_name", "locality_name")
     readonly_fields = ("csr",)
     actions = [download_csr]
 
