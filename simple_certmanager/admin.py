@@ -79,8 +79,30 @@ class SigningRequestAdmin(admin.ModelAdmin):
                 "fields": ("csr", "should_renew_csr"),
             },
         ),
+        (
+            _("Upload and verify certificate"),
+            {
+                "fields": ("certificate", "public_certificate"),
+                "description": _(
+                    "Upload the public certificate file here. "
+                    "This will be used to verify the signature against the CSR "
+                    "and create the certificate instance. The CSR needs to be saved"
+                    " first (created) before uploading the certificate."
+                ),
+            },
+        ),
     )
-    readonly_fields = ("csr",)
+    list_display = (
+        "common_name",
+        "organization_name",
+        "country_name",
+        "state_or_province_name",
+        "locality_name",
+        "email_address",
+    )
+    list_filter = ("organization_name", "state_or_province_name", "locality_name")
+    search_fields = ("common_name", "organization_name", "locality_name")
+    readonly_fields = ("csr", "public_certificate")
     actions = [download_csr]
 
     def response_post_save_add(self, request, obj, post_url_continue=None):

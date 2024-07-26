@@ -1,5 +1,7 @@
 from datetime import datetime
+from io import StringIO
 
+from django.core.files.base import File
 from django.db import models
 from django.utils.translation import gettext, gettext_lazy as _
 
@@ -48,6 +50,14 @@ class SigningRequest(models.Model):
         editable=False,
         blank=True,
     )
+    public_certificate = models.OneToOneField(
+        "Certificate",
+        on_delete=models.SET_NULL,
+        related_name="signing_request",
+        null=True,
+        blank=True,
+        editable=False,
+    )
 
     class Meta:
         constraints = [
@@ -59,6 +69,21 @@ class SigningRequest(models.Model):
                 name="csr_and_private_key_must_be_set_together",
             )
         ]
+
+    def create_certificate(self, certificate):
+        created_certificate = Certificate.objects.create(
+            type=CertificateTypes.key_pair,
+            public_certificate=certificate,
+            private_key=File(StringIO(self.private_key), "private_key.pem"),
+        )
+        created_certificate.label = (
+            f"Certificate #{created_certificate.pk} - {self.common_name}"
+        )
+        created_certificate.save()
+        # Link the certificate to the signing request
+        self.public_certificate = created_certificate
+        self.save()
+        return created_certificate
 
     def __str__(self):
         return _("Signing Request #{pk} for {common_name}").format(
