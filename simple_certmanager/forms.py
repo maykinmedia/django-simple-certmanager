@@ -2,7 +2,8 @@ from django import forms
 from django.core.files import File
 from django.utils.translation import gettext_lazy as _
 
-from .models import Certificate
+from .csr_generation import generate_private_key_with_csr
+from .models import Certificate, SigningRequest
 from .utils import (
     BadPassword,
     KeyIsEncrypted,
@@ -11,6 +12,48 @@ from .utils import (
     load_pem_x509_private_key,
 )
 from .validators import PrivateKeyValidator
+
+
+class SigningRequestAdminForm(forms.ModelForm):
+    should_renew_csr = forms.BooleanField(
+        label=_("Regenerate CSR"),
+        help_text=_(
+            "Check this box to regenerate the CSR from the above details. "
+            "This will also generate a new private key."
+        ),
+        required=False,
+    )
+
+    class Meta:
+        model = SigningRequest
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Show the "Regenerate CSR" checkbox when editing an existing SigningRequest
+        if not self.instance.pk:
+            del self.fields["should_renew_csr"]
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.cleaned_data.get("should_renew_csr"):
+            new_private_key, new_csr = generate_private_key_with_csr(
+                common_name=self.cleaned_data["common_name"],
+                country=self.cleaned_data["country_name"],
+                state_or_province=self.cleaned_data["state_or_province_name"],
+                locality=self.cleaned_data["locality_name"],
+                organization_name=self.cleaned_data["organization_name"],
+                email=self.cleaned_data["email_address"],
+            )
+            instance.private_key = new_private_key
+            instance.csr = new_csr
+        if commit:
+            instance.save()
+        return instance
+
+    def clean_should_renew_csr(self):
+        # Ensure the checkbox value is valid
+        return self.cleaned_data.get("should_renew_csr", False)
 
 
 def _read_and_reset(file_like: File):

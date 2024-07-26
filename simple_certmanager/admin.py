@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 from privates.admin import PrivateMediaMixin
 
-from .forms import CertificateAdminForm
+from .forms import CertificateAdminForm, SigningRequestAdminForm
 from .models import Certificate, SigningRequest
 from .utils import suppress_cryptography_errors
 
@@ -42,33 +42,7 @@ def download_csr(modeladmin, request, queryset):
 
 @admin.register(SigningRequest)
 class SigningRequestAdmin(admin.ModelAdmin):
-    fieldsets = (
-        (
-            _("Subject information"),
-            {
-                "fields": (
-                    "common_name",
-                    "organization_name",
-                    "country_name",
-                    "state_or_province_name",
-                    "locality_name",
-                    "email_address",
-                ),
-                "description": (
-                    _(
-                        "The CSR will be generated after entering"
-                        " the information and submitting the data."
-                    )
-                ),
-            },
-        ),
-        (
-            _("Signing Request (CSR)"),
-            {
-                "fields": ("csr",),
-            },
-        ),
-    )
+    form = SigningRequestAdminForm
     list_display = (
         "common_name",
         "organization_name",
@@ -82,7 +56,47 @@ class SigningRequestAdmin(admin.ModelAdmin):
     readonly_fields = ("csr",)
     actions = [download_csr]
 
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = (
+            (
+                _("Subject information"),
+                {
+                    "fields": (
+                        "common_name",
+                        "organization_name",
+                        "country_name",
+                        "state_or_province_name",
+                        "locality_name",
+                        "email_address",
+                    ),
+                    "description": (
+                        _(
+                            "The CSR will be generated after entering"
+                            " the information and submitting the data."
+                        )
+                    ),
+                },
+            ),
+            (
+                _("Signing Request (CSR)"),
+                {
+                    "fields": ("csr",),
+                },
+            ),
+        )
+
+        if obj:  # If the singing request is being edited
+            # Add the "Regenerate CSR" checkbox to Subject information fieldset
+            fieldsets[0][1]["fields"] += ("should_renew_csr",)
+
+        return fieldsets
+
     def response_post_save_add(self, request, obj, post_url_continue=None):
+        return HttpResponseRedirect(
+            reverse("admin:simple_certmanager_signingrequest_change", args=(obj.pk,))
+        )
+
+    def response_post_save_change(self, request, obj):
         return HttpResponseRedirect(
             reverse("admin:simple_certmanager_signingrequest_change", args=(obj.pk,))
         )
