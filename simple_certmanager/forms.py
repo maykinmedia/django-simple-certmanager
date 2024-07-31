@@ -30,13 +30,14 @@ class SigningRequestAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Show the "Regenerate CSR" checkbox when editing an existing SigningRequest
+        # Show the "Regenerate CSR" checkbox, but only enable it for existing
+        # instances.
         if not self.instance.pk:
-            del self.fields["should_renew_csr"]
+            self.fields["should_renew_csr"].disabled = True
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        if self.cleaned_data.get("should_renew_csr"):
+        if self.cleaned_data.get("should_renew_csr", False):
             new_private_key, new_csr = generate_private_key_with_csr(
                 common_name=self.cleaned_data["common_name"],
                 country=self.cleaned_data["country_name"],
@@ -50,10 +51,6 @@ class SigningRequestAdminForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
-
-    def clean_should_renew_csr(self):
-        # Ensure the checkbox value is valid
-        return self.cleaned_data.get("should_renew_csr", False)
 
 
 def _read_and_reset(file_like: File):

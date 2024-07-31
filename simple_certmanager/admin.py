@@ -53,43 +53,35 @@ class SigningRequestAdmin(admin.ModelAdmin):
     )
     list_filter = ("organization_name", "state_or_province_name", "locality_name")
     search_fields = ("common_name", "organization_name", "locality_name")
+    fieldsets = (
+        (
+            _("Subject information"),
+            {
+                "fields": (
+                    "common_name",
+                    "organization_name",
+                    "country_name",
+                    "state_or_province_name",
+                    "locality_name",
+                    "email_address",
+                ),
+                "description": (
+                    _(
+                        "The CSR will be generated after entering"
+                        " the information and submitting the data."
+                    )
+                ),
+            },
+        ),
+        (
+            _("Signing Request (CSR)"),
+            {
+                "fields": ("csr", "should_renew_csr"),
+            },
+        ),
+    )
     readonly_fields = ("csr",)
     actions = [download_csr]
-
-    def get_fieldsets(self, request, obj=None):
-        fieldsets = (
-            (
-                _("Subject information"),
-                {
-                    "fields": (
-                        "common_name",
-                        "organization_name",
-                        "country_name",
-                        "state_or_province_name",
-                        "locality_name",
-                        "email_address",
-                    ),
-                    "description": (
-                        _(
-                            "The CSR will be generated after entering"
-                            " the information and submitting the data."
-                        )
-                    ),
-                },
-            ),
-            (
-                _("Signing Request (CSR)"),
-                {
-                    "fields": ("csr",),
-                },
-            ),
-        )
-
-        if obj:  # If the singing request is being edited
-            # Add the "Regenerate CSR" checkbox to Subject information fieldset
-            fieldsets[0][1]["fields"] += ("should_renew_csr",)
-
-        return fieldsets
 
     def response_post_save_add(self, request, obj, post_url_continue=None):
         return HttpResponseRedirect(

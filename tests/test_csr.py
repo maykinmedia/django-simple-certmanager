@@ -24,7 +24,16 @@ def test_creating_signing_request_without_common_name_fails():
 
 
 @pytest.mark.django_db
-def test_admin_create_signing_request(admin_client, db):
+def test_admin_can_load_add_page(admin_client):
+    add_url = reverse("admin:simple_certmanager_signingrequest_add")
+
+    response = admin_client.get(add_url)
+
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_admin_create_signing_request(admin_client):
     add_url = reverse("admin:simple_certmanager_signingrequest_add")
 
     data = {
