@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 from privates.admin import PrivateMediaMixin
 
-from .forms import CertificateAdminForm
+from .forms import CertificateAdminForm, SigningRequestAdminForm
 from .models import Certificate, SigningRequest
 from .utils import suppress_cryptography_errors
 
@@ -42,6 +42,17 @@ def download_csr(modeladmin, request, queryset):
 
 @admin.register(SigningRequest)
 class SigningRequestAdmin(admin.ModelAdmin):
+    form = SigningRequestAdminForm
+    list_display = (
+        "common_name",
+        "organization_name",
+        "country_name",
+        "state_or_province_name",
+        "locality_name",
+        "email_address",
+    )
+    list_filter = ("organization_name", "state_or_province_name", "locality_name")
+    search_fields = ("common_name", "organization_name", "locality_name")
     fieldsets = (
         (
             _("Subject information"),
@@ -65,24 +76,19 @@ class SigningRequestAdmin(admin.ModelAdmin):
         (
             _("Signing Request (CSR)"),
             {
-                "fields": ("csr",),
+                "fields": ("csr", "should_renew_csr"),
             },
         ),
     )
-    list_display = (
-        "common_name",
-        "organization_name",
-        "country_name",
-        "state_or_province_name",
-        "locality_name",
-        "email_address",
-    )
-    list_filter = ("organization_name", "state_or_province_name", "locality_name")
-    search_fields = ("common_name", "organization_name", "locality_name")
     readonly_fields = ("csr",)
     actions = [download_csr]
 
     def response_post_save_add(self, request, obj, post_url_continue=None):
+        return HttpResponseRedirect(
+            reverse("admin:simple_certmanager_signingrequest_change", args=(obj.pk,))
+        )
+
+    def response_post_save_change(self, request, obj):
         return HttpResponseRedirect(
             reverse("admin:simple_certmanager_signingrequest_change", args=(obj.pk,))
         )

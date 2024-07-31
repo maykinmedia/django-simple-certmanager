@@ -24,7 +24,16 @@ def test_creating_signing_request_without_common_name_fails():
 
 
 @pytest.mark.django_db
-def test_admin_create_signing_request(admin_client, db):
+def test_admin_can_load_add_page(admin_client):
+    add_url = reverse("admin:simple_certmanager_signingrequest_add")
+
+    response = admin_client.get(add_url)
+
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_admin_create_signing_request(admin_client):
     add_url = reverse("admin:simple_certmanager_signingrequest_add")
 
     data = {
@@ -162,3 +171,73 @@ def test_download_csr_multiple(admin_client):
             assert csr.subject.get_attributes_for_oid(x509.NameOID.COUNTRY_NAME)[
                 0
             ].value in ["NL", "FR"]
+
+
+@pytest.mark.django_db
+def test_admin_save_existing_csr_should_renew(admin_client):
+    signing_request = SigningRequest.objects.create(
+        common_name="test.com",
+        country_name="US",
+        organization_name="Test Org",
+        state_or_province_name="Test State",
+        email_address="test@test.com",
+    )
+
+    orginal_csr = signing_request.csr
+    original_pk = signing_request.private_key
+
+    url = reverse(
+        "admin:simple_certmanager_signingrequest_change", args=[signing_request.pk]
+    )
+    response = admin_client.post(
+        url,
+        {
+            "common_name": "test.com",
+            "country_name": "US",
+            "organization_name": "Test Org",
+            "state_or_province_name": "Test State",
+            "email_address": "test@test.com",
+            "should_renew_csr": True,
+        },
+    )
+
+    assert response.status_code == 302
+    signing_request.refresh_from_db()
+    # CSR and PK should be regenerated
+    assert signing_request.csr != orginal_csr
+    assert signing_request.private_key != original_pk
+
+
+@pytest.mark.django_db
+def test_admin_save_existing_csr_should_not_renew(admin_client):
+    signing_request = SigningRequest.objects.create(
+        common_name="test.com",
+        country_name="US",
+        organization_name="Test Org",
+        state_or_province_name="Test State",
+        email_address="test@test.com",
+    )
+
+    original_csr = signing_request.csr
+    original_pk = signing_request.private_key
+
+    url = reverse(
+        "admin:simple_certmanager_signingrequest_change", args=[signing_request.pk]
+    )
+    response = admin_client.post(
+        url,
+        {
+            "common_name": "test.com",
+            "country_name": "US",
+            "organization_name": "Test Org",
+            "state_or_province_name": "Test State",
+            "email_address": "test@test.com",
+            "should_renew_csr": False,
+        },
+    )
+
+    assert response.status_code == 302
+    signing_request.refresh_from_db()
+    # CSR and PK should not be regenerated
+    assert signing_request.csr == original_csr
+    assert signing_request.private_key == original_pk
