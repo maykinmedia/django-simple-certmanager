@@ -1,8 +1,6 @@
-import datetime
 import zipfile
 from io import BytesIO
 
-from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import FileResponse
 from django.urls import reverse
@@ -10,10 +8,11 @@ from django.urls import reverse
 import pytest
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives import serialization
 
 from simple_certmanager.csr_generation import generate_private_key
 from simple_certmanager.models import Certificate, SigningRequest
+from simple_certmanager.test.certificate_generation import mkcert
 from simple_certmanager.utils import load_pem_x509_private_key
 
 
@@ -264,30 +263,9 @@ def test_saving_valid_cert_does_create_cert_instance_via_post(
     )
 
     private_key = load_pem_x509_private_key(csr.private_key.encode())
-    # Here I did not use the fixture mkcert to generate the certificate
-    # This is because the fixture mkcert did not generate a valid certificate
-    # The public keys of the private key and the certificate did not match
-    pub_cert = (
-        x509.CertificateBuilder()
-        .subject_name(
-            x509.Name(
-                [x509.NameAttribute(x509.NameOID.COMMON_NAME, "test.example.com")]
-            )
-        )
-        .issuer_name(
-            x509.Name(
-                [x509.NameAttribute(x509.NameOID.COMMON_NAME, "test.example.com")]
-            )
-        )
-        .public_key(private_key.public_key())
-        .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.datetime.now())
-        .not_valid_after(datetime.datetime.now() + datetime.timedelta(days=365))
-        .add_extension(
-            x509.SubjectAlternativeName([x509.DNSName("localhost")]),
-            critical=False,
-        )
-        .sign(private_key, hashes.SHA256(), default_backend())
+    pub_cert = mkcert(
+        x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "test.example.com")]),
+        private_key,
     )
 
     cert_bytes = pub_cert.public_bytes(serialization.Encoding.PEM)
@@ -345,30 +323,9 @@ def test_saving_valid_cert_with_invalid_signature_via_post_fails(
     # Use a different private key to generate the certificate with an invalid signature
     private_key = generate_private_key()
     private_key = load_pem_x509_private_key(private_key.encode())
-    # Here I did not use the fixture mkcert to generate the certificate
-    # This is because the fixture mkcert did not generate a valid certificate
-    # The public keys of the private key and the certificate did not match
-    pub_cert = (
-        x509.CertificateBuilder()
-        .subject_name(
-            x509.Name(
-                [x509.NameAttribute(x509.NameOID.COMMON_NAME, "test.example.com")]
-            )
-        )
-        .issuer_name(
-            x509.Name(
-                [x509.NameAttribute(x509.NameOID.COMMON_NAME, "test.example.com")]
-            )
-        )
-        .public_key(private_key.public_key())
-        .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.datetime.now())
-        .not_valid_after(datetime.datetime.now() + datetime.timedelta(days=365))
-        .add_extension(
-            x509.SubjectAlternativeName([x509.DNSName("localhost")]),
-            critical=False,
-        )
-        .sign(private_key, hashes.SHA256(), default_backend())
+    pub_cert = mkcert(
+        x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "test.example.com")]),
+        private_key,
     )
 
     cert_bytes = pub_cert.public_bytes(serialization.Encoding.PEM)
@@ -415,7 +372,7 @@ def test_saving_invalid_cert_does_not_create_cert_instance_via_post(
         email_address="email@valid.com",
     )
 
-    cert_pem = ContentFile(b"invalid bytes", "cert.pem")
+    cert_pem = SimpleUploadedFile("cert.pem", b"invalid bytes")
     form_data = {
         "common_name": "test.example.com",
         "organization_name": "Test Organization",

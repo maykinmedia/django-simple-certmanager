@@ -21,9 +21,11 @@ from .validators import PrivateKeyValidator
 class SigningRequestAdminForm(forms.ModelForm):
     certificate = forms.FileField(
         required=False,
-        help_text="Upload the public certificate file here. "
-        "This will be used to verify the signature against the CSR "
-        "and create the certificate instance.",
+        help_text=_(
+            "Upload the public certificate file here. "
+            "This will be used to verify the signature against the CSR "
+            "and create the certificate instance."
+        ),
         label="Upload Certificate",
     )
     should_renew_csr = forms.BooleanField(
@@ -51,7 +53,10 @@ class SigningRequestAdminForm(forms.ModelForm):
         # Handle the certificate file upload
         validated_certificate = self.cleaned_data.get("certificate")
         if validated_certificate:
-            instance.create_certificate(validated_certificate)
+            if not self.cleaned_data.get("should_renew_csr", False):
+                # If the checkbox is checked, the CSR will be regenerated
+                # instead of creating a certificate.
+                instance.create_certificate(validated_certificate)
         if self.cleaned_data.get("should_renew_csr", False):
             new_private_key, new_csr = generate_private_key_with_csr(
                 common_name=self.cleaned_data["common_name"],
@@ -72,8 +77,10 @@ class SigningRequestAdminForm(forms.ModelForm):
         if self.instance.public_certificate:
             self.add_error(
                 "certificate",
-                "A certificate already exists for this CSR. "
-                "Delete the certificate first.",
+                _(
+                    "A certificate already exists for this CSR. "
+                    "Delete the certificate first.",
+                ),
             )
         # Handle the certificate file upload
         if "certificate" in self.cleaned_data and self.cleaned_data["certificate"]:
