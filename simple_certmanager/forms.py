@@ -15,7 +15,7 @@ from .utils import (
     decrypted_key_to_pem,
     load_pem_x509_private_key,
 )
-from .validators import PrivateKeyValidator
+from .validators import PrivateKeyValidator, PublicCertValidator
 
 
 class SigningRequestAdminForm(forms.ModelForm):
@@ -26,7 +26,8 @@ class SigningRequestAdminForm(forms.ModelForm):
             "This will be used to verify the signature against the CSR "
             "and create the certificate instance."
         ),
-        label="Upload Certificate",
+        label=_("Upload Signed Certificate"),
+        validators=[PublicCertValidator()],
     )
     should_renew_csr = forms.BooleanField(
         label=_("Regenerate CSR"),
@@ -72,47 +73,39 @@ class SigningRequestAdminForm(forms.ModelForm):
             instance.save()
         return instance
 
-    def clean(self) -> dict[str, Any]:
-        # Errors if the CSR already has a certificate
+    def clean_certificate(self) -> File | None:
+        file = self.cleaned_data["certificate"]
+        if file is None:
+            return file
+
         if self.instance.public_certificate:
-            self.add_error(
-                "certificate",
+            raise forms.ValidationError(
                 _(
                     "A certificate already exists for this CSR. "
                     "Delete the certificate first.",
                 ),
             )
-        # Handle the certificate file upload
-        if "certificate" in self.cleaned_data and self.cleaned_data["certificate"]:
-            uploaded_file = self.cleaned_data["certificate"]
-            try:
-                uploaded_file.seek(0)
-                certificate_data = uploaded_file.read()
 
-                # Load the certificate and throw an error if the certificate is invalid
-                certificate = x509.load_pem_x509_certificate(certificate_data)
-                private_key = load_pem_x509_private_key(
-                    self.instance.private_key.encode()
-                )
+        certificate_data = _read_and_reset(file)
 
-                # Check if the certificate matches the CSR by comparing the public keys
-                private_key_pubkey = private_key.public_key()
-                certificate_public_key = certificate.public_key()
-                match = private_key_pubkey == certificate_public_key
-                if not match:
-                    self.add_error(
-                        "certificate",
-                        "Certificate does not match the signature from the actual CSR.",
-                    )
+        # Load the certificate and private key
+        # Private key is generated so won't throw an error
+        # Public certificate is validated so won't throw an error
+        certificate = x509.load_pem_x509_certificate(certificate_data)
+        private_key = load_pem_x509_private_key(
+            self.instance.private_key.encode("ascii")
+        )
 
-            except ValueError:
-                self.add_error(
-                    "certificate", "Invalid certificate. Check the file format."
-                )
-            except Exception:
-                self.add_error("certificate", "An unexpected error occurred.")
+        # Check if the certificate matches the CSR by comparing the public keys
+        private_key_pubkey = private_key.public_key()
+        certificate_public_key = certificate.public_key()
+        match = private_key_pubkey == certificate_public_key
+        if not match:
+            raise forms.ValidationError(
+                _("Certificate does not match the signature from the actual CSR."),
+            )
 
-        return self.cleaned_data
+        return file
 
 
 def _read_and_reset(file_like: File):

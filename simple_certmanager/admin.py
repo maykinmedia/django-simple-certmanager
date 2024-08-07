@@ -34,7 +34,7 @@ def download_csr(modeladmin, request, queryset):
         # In other words, the queryset can't be empty
         csr = queryset[0].csr
         return FileResponse(
-            BytesIO(csr.encode()),
+            BytesIO(csr.encode("ascii")),
             as_attachment=True,
             filename=f"{slugify(queryset[0].common_name)}_{queryset[0].pk}_csr.pem",
         )
@@ -82,7 +82,7 @@ class SigningRequestAdmin(admin.ModelAdmin):
             },
         ),
         (
-            _("Upload certificate"),
+            _("Upload Signed Certificate"),
             {
                 "fields": ("certificate", "public_certificate"),
             },

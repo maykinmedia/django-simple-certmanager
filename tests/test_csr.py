@@ -10,7 +10,7 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
-from simple_certmanager.csr_generation import generate_private_key
+from simple_certmanager.csr_generation import generate_csr, generate_private_key
 from simple_certmanager.models import Certificate, SigningRequest
 from simple_certmanager.test.certificate_generation import mkcert
 from simple_certmanager.utils import load_pem_x509_private_key
@@ -82,7 +82,7 @@ def test_generate_csr():
         email_address="test@test.com",
     )
 
-    csr = x509.load_pem_x509_csr(signing_request.csr.encode(), default_backend())
+    csr = x509.load_pem_x509_csr(signing_request.csr.encode("ascii"), default_backend())
 
     subject = csr.subject
     assert subject.get_attributes_for_oid(x509.NameOID.COUNTRY_NAME)[0].value == "US"
@@ -262,7 +262,7 @@ def test_saving_valid_cert_does_create_cert_instance_via_post(
         email_address="email@valid.com",
     )
 
-    private_key = load_pem_x509_private_key(csr.private_key.encode())
+    private_key = load_pem_x509_private_key(csr.private_key.encode("ascii"))
     pub_cert = mkcert(
         x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "test.example.com")]),
         private_key,
@@ -290,6 +290,8 @@ def test_saving_valid_cert_does_create_cert_instance_via_post(
 
     assert response.status_code == 302
     assert Certificate.objects.count() == 1
+
+    cert_pem.seek(0)
 
     # Saving the same certificate again should not create a new instance
     response = admin_client.post(
@@ -322,7 +324,7 @@ def test_saving_valid_cert_with_invalid_signature_via_post_fails(
 
     # Use a different private key to generate the certificate with an invalid signature
     private_key = generate_private_key()
-    private_key = load_pem_x509_private_key(private_key.encode())
+    private_key = load_pem_x509_private_key(private_key.encode("ascii"))
     pub_cert = mkcert(
         x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "test.example.com")]),
         private_key,
@@ -390,6 +392,14 @@ def test_saving_invalid_cert_does_not_create_cert_instance_via_post(
     assert response.status_code == 200
     assert len(response.context["adminform"].form.errors) > 0
     assert response.context["adminform"].form.errors["certificate"] == [
-        "Invalid certificate. Check the file format."
+        "Invalid file provided, expected a certificate in PEM format"
     ]
     assert Certificate.objects.count() == 0
+
+
+def test_csr_is_a_function_of_private_key_plus_subject_fields():
+    "Generated CSR only changes depending on key and subject"
+    my_private_key_pem = generate_private_key()
+    csr_once = generate_csr(key_pem=my_private_key_pem, common_name="Foo")
+    csr_twice = generate_csr(key_pem=my_private_key_pem, common_name="Foo")
+    assert csr_once == csr_twice
