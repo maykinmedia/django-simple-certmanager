@@ -1,15 +1,19 @@
 import zipfile
 from io import BytesIO
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import FileResponse
 from django.urls import reverse
 
 import pytest
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 
-from simple_certmanager.csr_generation import generate_private_key
-from simple_certmanager.models import SigningRequest
+from simple_certmanager.csr_generation import generate_csr, generate_private_key
+from simple_certmanager.models import Certificate, SigningRequest
+from simple_certmanager.test.certificate_generation import mkcert
+from simple_certmanager.utils import load_pem_x509_private_key
 
 
 @pytest.fixture
@@ -78,7 +82,7 @@ def test_generate_csr():
         email_address="test@test.com",
     )
 
-    csr = x509.load_pem_x509_csr(signing_request.csr.encode(), default_backend())
+    csr = x509.load_pem_x509_csr(signing_request.csr.encode("ascii"), default_backend())
 
     subject = csr.subject
     assert subject.get_attributes_for_oid(x509.NameOID.COUNTRY_NAME)[0].value == "US"
@@ -241,3 +245,161 @@ def test_admin_save_existing_csr_should_not_renew(admin_client):
     # CSR and PK should not be regenerated
     assert signing_request.csr == original_csr
     assert signing_request.private_key == original_pk
+
+
+@pytest.mark.django_db
+def test_saving_valid_cert_does_create_cert_instance_via_post(
+    admin_client,
+    temp_private_root,
+):
+    assert Certificate.objects.count() == 0
+
+    csr = SigningRequest.objects.create(
+        common_name="test.example.com",
+        organization_name="Test Organization",
+        state_or_province_name="Test State",
+        country_name="NL",
+        email_address="email@valid.com",
+    )
+
+    private_key = load_pem_x509_private_key(csr.private_key.encode("ascii"))
+    pub_cert = mkcert(
+        x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "test.example.com")]),
+        private_key,
+    )
+
+    cert_bytes = pub_cert.public_bytes(serialization.Encoding.PEM)
+    cert_pem = SimpleUploadedFile("cert.pem", cert_bytes)
+
+    form_data = {
+        "common_name": "test.example.com",
+        "organization_name": "Test Organization",
+        "country_name": "NL",
+        "state_or_province_name": "Test State",
+        "email_address": "email@valid.com",
+        "certificate": cert_pem,
+    }
+
+    # Valid certificate should create a Certificate instance
+    assert pub_cert.public_key() == private_key.public_key()
+
+    response = admin_client.post(
+        f"/admin/simple_certmanager/signingrequest/{csr.pk}/change/",
+        data=form_data,
+    )
+
+    assert response.status_code == 302
+    assert Certificate.objects.count() == 1
+
+    cert_pem.seek(0)
+
+    # Saving the same certificate again should not create a new instance
+    response = admin_client.post(
+        f"/admin/simple_certmanager/signingrequest/{csr.pk}/change/",
+        data=form_data,
+    )
+    assert response.status_code == 200
+    assert len(response.context["adminform"].form.errors) > 0
+    assert (
+        "A certificate already exists for this CSR. Delete the certificate first."
+        in response.context["adminform"].form.errors["certificate"]
+    )
+    assert Certificate.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_saving_valid_cert_with_invalid_signature_via_post_fails(
+    admin_client,
+    temp_private_root,
+):
+    assert Certificate.objects.count() == 0
+
+    csr = SigningRequest.objects.create(
+        common_name="test.example.com",
+        organization_name="Test Organization",
+        state_or_province_name="Test State",
+        country_name="NL",
+        email_address="email@valid.com",
+    )
+
+    # Use a different private key to generate the certificate with an invalid signature
+    private_key = generate_private_key()
+    private_key = load_pem_x509_private_key(private_key.encode("ascii"))
+    pub_cert = mkcert(
+        x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "test.example.com")]),
+        private_key,
+    )
+
+    cert_bytes = pub_cert.public_bytes(serialization.Encoding.PEM)
+    cert_pem = SimpleUploadedFile("cert.pem", cert_bytes)
+
+    form_data = {
+        "common_name": "test.example.com",
+        "organization_name": "Test Organization",
+        "country_name": "NL",
+        "state_or_province_name": "Test State",
+        "email_address": "email@valid.com",
+        "certificate": cert_pem,
+    }
+
+    # Valid certificate should create a Certificate instance
+    assert pub_cert.public_key() == private_key.public_key()
+
+    # Saving the same certificate again should not create a new instance
+    response = admin_client.post(
+        f"/admin/simple_certmanager/signingrequest/{csr.pk}/change/",
+        data=form_data,
+    )
+    assert response.status_code == 200
+    assert len(response.context["adminform"].form.errors) > 0
+    assert (
+        "Certificate does not match the signature from the actual CSR."
+        in response.context["adminform"].form.errors["certificate"]
+    )
+    assert Certificate.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_saving_invalid_cert_does_not_create_cert_instance_via_post(
+    admin_client,
+    temp_private_root,
+):
+    assert Certificate.objects.count() == 0
+
+    csr = SigningRequest.objects.create(
+        common_name="test.example.com",
+        organization_name="Test Organization",
+        state_or_province_name="Test State",
+        country_name="NL",
+        email_address="email@valid.com",
+    )
+
+    cert_pem = SimpleUploadedFile("cert.pem", b"invalid bytes")
+    form_data = {
+        "common_name": "test.example.com",
+        "organization_name": "Test Organization",
+        "country_name": "NL",
+        "state_or_province_name": "Test State",
+        "email_address": "email@valid.com",
+        "certificate": cert_pem,
+    }
+
+    response = admin_client.post(
+        f"/admin/simple_certmanager/signingrequest/{csr.pk}/change/",
+        data=form_data,
+    )
+
+    assert response.status_code == 200
+    assert len(response.context["adminform"].form.errors) > 0
+    assert response.context["adminform"].form.errors["certificate"] == [
+        "Invalid file provided, expected a certificate in PEM format"
+    ]
+    assert Certificate.objects.count() == 0
+
+
+def test_csr_is_a_function_of_private_key_plus_subject_fields():
+    "Generated CSR only changes depending on key and subject"
+    my_private_key_pem = generate_private_key()
+    csr_once = generate_csr(key_pem=my_private_key_pem, common_name="Foo")
+    csr_twice = generate_csr(key_pem=my_private_key_pem, common_name="Foo")
+    assert csr_once == csr_twice

@@ -37,6 +37,11 @@ purged as well.
 You can create and download ``Certificate Signing Requests`` (CSR) through the
 admin as well.
 
+Upload the TLS certificate from the Certificate Authority (CA) to the 
+``Certificate Signing Request`` instance to verify it and store it in the database.
+
+The ``Certificate`` instance will then contain the certificate and the private key if valid.
+
 **Programmatically**
 
 The ``Certificate`` model is the public API of the library.

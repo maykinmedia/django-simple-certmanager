@@ -34,7 +34,7 @@ def download_csr(modeladmin, request, queryset):
         # In other words, the queryset can't be empty
         csr = queryset[0].csr
         return FileResponse(
-            BytesIO(csr.encode()),
+            BytesIO(csr.encode("ascii")),
             as_attachment=True,
             filename=f"{slugify(queryset[0].common_name)}_{queryset[0].pk}_csr.pem",
         )
@@ -53,6 +53,8 @@ class SigningRequestAdmin(admin.ModelAdmin):
     )
     list_filter = ("organization_name", "state_or_province_name", "locality_name")
     search_fields = ("common_name", "organization_name", "locality_name")
+    readonly_fields = ("csr", "public_certificate")
+    actions = [download_csr]
     fieldsets = (
         (
             _("Subject information"),
@@ -79,9 +81,13 @@ class SigningRequestAdmin(admin.ModelAdmin):
                 "fields": ("csr", "should_renew_csr"),
             },
         ),
+        (
+            _("Upload Signed Certificate"),
+            {
+                "fields": ("certificate", "public_certificate"),
+            },
+        ),
     )
-    readonly_fields = ("csr",)
-    actions = [download_csr]
 
     def response_post_save_add(self, request, obj, post_url_continue=None):
         return HttpResponseRedirect(

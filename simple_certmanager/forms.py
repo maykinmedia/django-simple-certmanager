@@ -1,6 +1,10 @@
+from typing import Any
+
 from django import forms
 from django.core.files import File
 from django.utils.translation import gettext_lazy as _
+
+from cryptography import x509
 
 from .csr_generation import generate_private_key_with_csr
 from .models import Certificate, SigningRequest
@@ -11,10 +15,20 @@ from .utils import (
     decrypted_key_to_pem,
     load_pem_x509_private_key,
 )
-from .validators import PrivateKeyValidator
+from .validators import PrivateKeyValidator, PublicCertValidator
 
 
 class SigningRequestAdminForm(forms.ModelForm):
+    certificate = forms.FileField(
+        required=False,
+        help_text=_(
+            "Upload the public certificate file here. "
+            "This will be used to verify the signature against the CSR "
+            "and create the certificate instance."
+        ),
+        label=_("Upload Signed Certificate"),
+        validators=[PublicCertValidator()],
+    )
     should_renew_csr = forms.BooleanField(
         label=_("Regenerate CSR"),
         help_text=_(
@@ -35,8 +49,15 @@ class SigningRequestAdminForm(forms.ModelForm):
         if not self.instance.pk:
             self.fields["should_renew_csr"].disabled = True
 
-    def save(self, commit=True):
-        instance = super().save(commit=False)
+    def save(self, commit: bool = True) -> Any:
+        instance = super().save(commit)
+        # Handle the certificate file upload
+        validated_certificate = self.cleaned_data.get("certificate")
+        if validated_certificate:
+            if not self.cleaned_data.get("should_renew_csr", False):
+                # If the checkbox is checked, the CSR will be regenerated
+                # instead of creating a certificate.
+                instance.create_certificate(validated_certificate)
         if self.cleaned_data.get("should_renew_csr", False):
             new_private_key, new_csr = generate_private_key_with_csr(
                 common_name=self.cleaned_data["common_name"],
@@ -51,6 +72,40 @@ class SigningRequestAdminForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+    def clean_certificate(self) -> File | None:
+        file = self.cleaned_data["certificate"]
+        if file is None:
+            return file
+
+        if self.instance.public_certificate:
+            raise forms.ValidationError(
+                _(
+                    "A certificate already exists for this CSR. "
+                    "Delete the certificate first.",
+                ),
+            )
+
+        certificate_data = _read_and_reset(file)
+
+        # Load the certificate and private key
+        # Private key is generated so won't throw an error
+        # Public certificate is validated so won't throw an error
+        certificate = x509.load_pem_x509_certificate(certificate_data)
+        private_key = load_pem_x509_private_key(
+            self.instance.private_key.encode("ascii")
+        )
+
+        # Check if the certificate matches the CSR by comparing the public keys
+        private_key_pubkey = private_key.public_key()
+        certificate_public_key = certificate.public_key()
+        match = private_key_pubkey == certificate_public_key
+        if not match:
+            raise forms.ValidationError(
+                _("Certificate does not match the signature from the actual CSR."),
+            )
+
+        return file
 
 
 def _read_and_reset(file_like: File):
