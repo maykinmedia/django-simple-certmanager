@@ -12,7 +12,10 @@ from cryptography.x509 import (
 )
 from privates.fields import PrivateMediaFileField
 
-from simple_certmanager.csr_generation import generate_private_key_with_csr
+from simple_certmanager.csr_generation import (
+    generate_csr,
+    generate_private_key_with_csr,
+)
 
 from .constants import CertificateTypes
 from .mixins import DeleteFileFieldFilesMixin
@@ -59,17 +62,6 @@ class SigningRequest(models.Model):
         editable=False,
     )
 
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(
-                    models.Q(csr="", private_key="")
-                    | (~models.Q(csr="") & ~models.Q(private_key=""))
-                ),
-                name="csr_and_private_key_must_be_set_together",
-            )
-        ]
-
     def __str__(self):
         return _("Signing Request #{pk} for {common_name}").format(
             pk=self.pk,
@@ -77,7 +69,7 @@ class SigningRequest(models.Model):
         )
 
     def save(self, *args, **kwargs):
-        # we generate private key + csr as one atomic unit
+        # generate private key once
         if not self.private_key:
             self.private_key, self.csr = generate_private_key_with_csr(
                 common_name=self.common_name,
@@ -87,6 +79,16 @@ class SigningRequest(models.Model):
                 country=self.country_name,
                 email=self.email_address,
             )
+        else:
+            if not self.public_certificate:
+                self.csr = generate_csr(
+                    key_pem=self.private_key,
+                    common_name=self.common_name,
+                    organization_name=self.organization_name,
+                    locality=self.locality_name,
+                    state_or_province=self.state_or_province_name,
+                    country=self.country_name,
+                )
         super().save(*args, **kwargs)
 
     @transaction.atomic

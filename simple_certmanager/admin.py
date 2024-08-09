@@ -1,8 +1,8 @@
 from io import BytesIO
 from zipfile import ZipFile
 
-from django.contrib import admin
-from django.http import FileResponse, HttpResponseRedirect
+from django.contrib import admin, messages
+from django.http import FileResponse, HttpRequest, HttpResponseRedirect
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -53,7 +53,6 @@ class SigningRequestAdmin(admin.ModelAdmin):
     )
     list_filter = ("organization_name", "state_or_province_name", "locality_name")
     search_fields = ("common_name", "organization_name", "locality_name")
-    readonly_fields = ("csr", "public_certificate")
     actions = [download_csr]
     fieldsets = (
         (
@@ -78,7 +77,7 @@ class SigningRequestAdmin(admin.ModelAdmin):
         (
             _("Signing Request (CSR)"),
             {
-                "fields": ("csr", "should_renew_csr"),
+                "fields": ("csr",),
             },
         ),
         (
@@ -89,15 +88,65 @@ class SigningRequestAdmin(admin.ModelAdmin):
         ),
     )
 
+    def get_object(
+        self, request: HttpRequest, object_id: str, from_field: str | None = None
+    ):
+        """
+        Here I only access the object so I can check which message to display
+        to help the user. I don't need to change the object in any way.
+        """
+        object = super().get_object(request, object_id, from_field)
+        if object and object.public_certificate:
+            messages.warning(
+                request,
+                _(
+                    "This request is signed therefore can not be edited."
+                    " You can safely delete it."
+                ),
+            )
+
+        return object
+
+    def get_readonly_fields(
+        self, request: HttpRequest, obj: SigningRequest | None = None
+    ):
+        "Make the CSR field read-only after it has been signed."
+        readonly_fields = [
+            "csr",
+            "public_certificate",
+        ]
+        if obj and obj.public_certificate:
+            readonly_fields.extend(
+                [
+                    "common_name",
+                    "organization_name",
+                    "country_name",
+                    "state_or_province_name",
+                    "locality_name",
+                    "email_address",
+                ]
+            )
+        return readonly_fields
+
     def response_post_save_add(self, request, obj, post_url_continue=None):
+        "Redirects to the change form instead of the list view."
         return HttpResponseRedirect(
             reverse("admin:simple_certmanager_signingrequest_change", args=(obj.pk,))
         )
 
     def response_post_save_change(self, request, obj):
+        "Redirects to the change form instead of the list view."
         return HttpResponseRedirect(
             reverse("admin:simple_certmanager_signingrequest_change", args=(obj.pk,))
         )
+
+    def log_change(self, request, obj, message):
+        "Logs that an object has been successfully changed."
+        if obj.public_certificate:
+            message = _("Signing Request processed and deleted.")
+            super().log_deletion(request, obj, message)
+        else:
+            super().log_change(request, obj, message)
 
 
 @admin.register(Certificate)
