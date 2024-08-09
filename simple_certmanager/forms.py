@@ -6,7 +6,6 @@ from django.utils.translation import gettext_lazy as _
 
 from cryptography import x509
 
-from .csr_generation import generate_private_key_with_csr
 from .models import Certificate, SigningRequest
 from .utils import (
     BadPassword,
@@ -29,46 +28,18 @@ class SigningRequestAdminForm(forms.ModelForm):
         label=_("Upload Signed Certificate"),
         validators=[PublicCertValidator()],
     )
-    should_renew_csr = forms.BooleanField(
-        label=_("Regenerate CSR"),
-        help_text=_(
-            "Check this box to regenerate the CSR from the above details. "
-            "This will also generate a new private key."
-        ),
-        required=False,
-    )
 
     class Meta:
         model = SigningRequest
         fields = "__all__"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Show the "Regenerate CSR" checkbox, but only enable it for existing
-        # instances.
-        if not self.instance.pk:
-            self.fields["should_renew_csr"].disabled = True
-
     def save(self, commit: bool = True) -> Any:
+        # Save the subject
         instance = super().save(commit)
         # Handle the certificate file upload
         validated_certificate = self.cleaned_data.get("certificate")
         if validated_certificate:
-            if not self.cleaned_data.get("should_renew_csr", False):
-                # If the checkbox is checked, the CSR will be regenerated
-                # instead of creating a certificate.
-                instance.create_certificate(validated_certificate)
-        if self.cleaned_data.get("should_renew_csr", False):
-            new_private_key, new_csr = generate_private_key_with_csr(
-                common_name=self.cleaned_data["common_name"],
-                country=self.cleaned_data["country_name"],
-                state_or_province=self.cleaned_data["state_or_province_name"],
-                locality=self.cleaned_data["locality_name"],
-                organization_name=self.cleaned_data["organization_name"],
-                email=self.cleaned_data["email_address"],
-            )
-            instance.private_key = new_private_key
-            instance.csr = new_csr
+            instance.create_certificate(validated_certificate)
         if commit:
             instance.save()
         return instance
