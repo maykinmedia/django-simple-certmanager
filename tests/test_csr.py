@@ -223,18 +223,13 @@ def test_saving_valid_cert_does_create_cert_instance_via_post(
 
     cert_pem.seek(0)
 
-    # Saving the same certificate again should not create a new instance
+    # Saving the same certificate is not possible anymore
+    # We removed the permission when the SigningRequest was signed
     response = admin_client.post(
         f"/admin/simple_certmanager/signingrequest/{csr.pk}/change/",
         data=form_data,
     )
-    assert response.status_code == 200
-    assert len(response.context["adminform"].form.errors) > 0
-    assert (
-        "A certificate already exists for this CSR. Delete the certificate first."
-        in response.context["adminform"].form.errors["certificate"]
-    )
-    assert Certificate.objects.count() == 1
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
@@ -451,12 +446,8 @@ def test_saving_public_certifate_disables_signing_request_fields(admin_client):
         f"/admin/simple_certmanager/signingrequest/{csr.pk}/change/"
     )
     assert response.status_code == 200
-    assert (
-        "This request is signed therefore can not be edited."
-        in response.content.decode()
-    )
     # Check that the fields are readonly
-    # 8 readonly fields in the form
+    # 9 readonly fields in the form
     # csr, public_certificate, common_name, organization_name, country_name,
-    # state_or_province_name, locality_name, email_address
-    assert response.content.decode().count("readonly") == 8
+    # state_or_province_name, locality_name, email_address, certificate
+    assert response.content.decode().count("readonly") == 9

@@ -40,6 +40,8 @@ admin as well.
 Upload the TLS certificate from the Certificate Authority (CA) to the 
 ``Certificate Signing Request`` instance to verify it and store it in the database.
 
+Once signed, the signing request can not be modified anymore and can be safely deleted.
+
 The ``Certificate`` instance will then contain the certificate and the private key if valid.
 
 **Programmatically**
