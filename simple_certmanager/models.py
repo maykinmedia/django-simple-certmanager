@@ -43,12 +43,6 @@ class SigningRequest(models.Model):
     email_address = models.EmailField(
         help_text=_("Email address for the certificate"), blank=True
     )
-    csr = models.TextField(
-        editable=False,
-        blank=True,
-        help_text=_("Certificate Signing Request"),
-        verbose_name=_("CSR"),
-    )
     private_key = models.TextField(
         editable=False,
         blank=True,
@@ -71,7 +65,7 @@ class SigningRequest(models.Model):
     def save(self, *args, **kwargs):
         # generate private key once
         if not self.private_key:
-            self.private_key, self.csr = generate_private_key_with_csr(
+            self.private_key, csr = generate_private_key_with_csr(
                 common_name=self.common_name,
                 organization_name=self.organization_name,
                 locality=self.locality_name,
@@ -79,17 +73,19 @@ class SigningRequest(models.Model):
                 country=self.country_name,
                 email=self.email_address,
             )
-        else:
-            if not self.public_certificate:
-                self.csr = generate_csr(
-                    key_pem=self.private_key,
-                    common_name=self.common_name,
-                    organization_name=self.organization_name,
-                    locality=self.locality_name,
-                    state_or_province=self.state_or_province_name,
-                    country=self.country_name,
-                )
         super().save(*args, **kwargs)
+
+    @property
+    def csr(self):
+        return generate_csr(
+            key_pem=self.private_key,
+            common_name=self.common_name,
+            organization_name=self.organization_name,
+            locality=self.locality_name,
+            state_or_province=self.state_or_province_name,
+            country=self.country_name,
+            email=self.email_address,
+        )
 
     @transaction.atomic
     def create_certificate(self, certificate: File):

@@ -60,13 +60,11 @@ def test_admin_create_signing_request(admin_client):
 
 
 @pytest.mark.django_db
-def test_save_generates_private_key_and_csr(signing_request):
+def test_save_generates_private_key(signing_request):
     assert signing_request.private_key == ""
-    assert signing_request.csr == ""
     signing_request.save()
     saved_private_key = signing_request.private_key
     assert signing_request.private_key != ""
-    assert signing_request.csr != ""
     # Additional saves do not overwrite the private key
     signing_request.save()
     assert signing_request.private_key == saved_private_key
@@ -119,7 +117,7 @@ def test_download_csr_single(admin_client):
 
     url = reverse("admin:simple_certmanager_signingrequest_changelist")
     response = admin_client.post(
-        url, {"action": "download_csr", "_selected_action": [signing_request.pk]}
+        url, {"action": "download_csr_action", "_selected_action": [signing_request.pk]}
     )
 
     assert isinstance(response, FileResponse)
@@ -150,7 +148,7 @@ def test_download_csr_multiple(admin_client):
     response = admin_client.post(
         url,
         {
-            "action": "download_csr",
+            "action": "download_csr_action",
             "_selected_action": [signing_request1.pk, signing_request2.pk],
         },
     )
@@ -362,7 +360,7 @@ def test_csr_does_not_renew_if_subject_dont_change(admin_client):
     # PK should not have changed
     assert signing_request.private_key == original_pk
     # CSR should not have changed since suject and pk are the same
-    assert signing_request.csr != orginal_csr
+    assert signing_request.csr == orginal_csr
 
 
 @pytest.mark.django_db
@@ -451,3 +449,44 @@ def test_saving_public_certifate_disables_signing_request_fields(admin_client):
     # csr, public_certificate, common_name, organization_name, country_name,
     # state_or_province_name, locality_name, email_address, certificate
     assert response.content.decode().count("readonly") == 9
+
+
+@pytest.mark.django_db
+def test_csr_display(admin_client, client):
+    add_url = reverse("admin:simple_certmanager_signingrequest_add")
+
+    response = admin_client.get(add_url)
+
+    assert response.status_code == 200
+    assert "CSR not generated yet" in response.content.decode()
+
+    data = {
+        "common_name": "test.com",
+        "country_name": "US",
+        "organization_name": "Test Org",
+        "state_or_province_name": "Test State",
+        "email_address": "test@test.com",
+    }
+
+    response = admin_client.post(add_url, data, follow=True)
+
+    assert response.status_code == 200
+
+    signing_request = SigningRequest.objects.get()
+    assert signing_request is not None
+    assert signing_request.private_key != ""
+    assert signing_request.csr != ""
+    assert "BEGIN PRIVATE KEY" in signing_request.private_key
+    assert "Download CSR" in response.content.decode()
+
+    # Download CSR logged in as admin
+    download_csr_url = reverse("admin:download_csr", args=(signing_request.pk,))
+    response = admin_client.get(download_csr_url)
+    assert response.status_code == 200
+
+    # User without permission to add SigningRequests can't download CSR
+    response = client.get(download_csr_url)
+    assert response.status_code == 302
+    base_url = "/admin/login/?next=/admin/simple_certmanager/"
+    url = base_url + "signingrequest/dowload_csr/{}".format(signing_request.pk)
+    assert response.url == url
