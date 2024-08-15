@@ -2,7 +2,7 @@ from io import BytesIO
 from zipfile import ZipFile
 
 from django.contrib import admin
-from django.http import FileResponse, HttpResponseRedirect
+from django.http import FileResponse, HttpRequest, HttpResponseRedirect
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -51,9 +51,12 @@ class SigningRequestAdmin(admin.ModelAdmin):
         "locality_name",
         "email_address",
     )
+    readonly_fields = (
+        "csr",
+        "public_certificate",
+    )
     list_filter = ("organization_name", "state_or_province_name", "locality_name")
     search_fields = ("common_name", "organization_name", "locality_name")
-    readonly_fields = ("csr", "public_certificate")
     actions = [download_csr]
     fieldsets = (
         (
@@ -78,7 +81,7 @@ class SigningRequestAdmin(admin.ModelAdmin):
         (
             _("Signing Request (CSR)"),
             {
-                "fields": ("csr", "should_renew_csr"),
+                "fields": ("csr",),
             },
         ),
         (
@@ -89,12 +92,23 @@ class SigningRequestAdmin(admin.ModelAdmin):
         ),
     )
 
+    def has_change_permission(
+        self, request: HttpRequest, obj: SigningRequest | None = None
+    ) -> bool:
+        if obj is None:
+            return super().has_change_permission(request, obj)
+        return (
+            super().has_change_permission(request, obj) and not obj.public_certificate
+        )
+
     def response_post_save_add(self, request, obj, post_url_continue=None):
+        "Redirects to the change form instead of the list view."
         return HttpResponseRedirect(
             reverse("admin:simple_certmanager_signingrequest_change", args=(obj.pk,))
         )
 
     def response_post_save_change(self, request, obj):
+        "Redirects to the change form instead of the list view."
         return HttpResponseRedirect(
             reverse("admin:simple_certmanager_signingrequest_change", args=(obj.pk,))
         )

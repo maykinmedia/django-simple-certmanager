@@ -178,76 +178,6 @@ def test_download_csr_multiple(admin_client):
 
 
 @pytest.mark.django_db
-def test_admin_save_existing_csr_should_renew(admin_client):
-    signing_request = SigningRequest.objects.create(
-        common_name="test.com",
-        country_name="US",
-        organization_name="Test Org",
-        state_or_province_name="Test State",
-        email_address="test@test.com",
-    )
-
-    orginal_csr = signing_request.csr
-    original_pk = signing_request.private_key
-
-    url = reverse(
-        "admin:simple_certmanager_signingrequest_change", args=[signing_request.pk]
-    )
-    response = admin_client.post(
-        url,
-        {
-            "common_name": "test.com",
-            "country_name": "US",
-            "organization_name": "Test Org",
-            "state_or_province_name": "Test State",
-            "email_address": "test@test.com",
-            "should_renew_csr": True,
-        },
-    )
-
-    assert response.status_code == 302
-    signing_request.refresh_from_db()
-    # CSR and PK should be regenerated
-    assert signing_request.csr != orginal_csr
-    assert signing_request.private_key != original_pk
-
-
-@pytest.mark.django_db
-def test_admin_save_existing_csr_should_not_renew(admin_client):
-    signing_request = SigningRequest.objects.create(
-        common_name="test.com",
-        country_name="US",
-        organization_name="Test Org",
-        state_or_province_name="Test State",
-        email_address="test@test.com",
-    )
-
-    original_csr = signing_request.csr
-    original_pk = signing_request.private_key
-
-    url = reverse(
-        "admin:simple_certmanager_signingrequest_change", args=[signing_request.pk]
-    )
-    response = admin_client.post(
-        url,
-        {
-            "common_name": "test.com",
-            "country_name": "US",
-            "organization_name": "Test Org",
-            "state_or_province_name": "Test State",
-            "email_address": "test@test.com",
-            "should_renew_csr": False,
-        },
-    )
-
-    assert response.status_code == 302
-    signing_request.refresh_from_db()
-    # CSR and PK should not be regenerated
-    assert signing_request.csr == original_csr
-    assert signing_request.private_key == original_pk
-
-
-@pytest.mark.django_db
 def test_saving_valid_cert_does_create_cert_instance_via_post(
     admin_client,
     temp_private_root,
@@ -293,18 +223,13 @@ def test_saving_valid_cert_does_create_cert_instance_via_post(
 
     cert_pem.seek(0)
 
-    # Saving the same certificate again should not create a new instance
+    # Saving the same certificate is not possible anymore
+    # We removed the permission when the SigningRequest was signed
     response = admin_client.post(
         f"/admin/simple_certmanager/signingrequest/{csr.pk}/change/",
         data=form_data,
     )
-    assert response.status_code == 200
-    assert len(response.context["adminform"].form.errors) > 0
-    assert (
-        "A certificate already exists for this CSR. Delete the certificate first."
-        in response.context["adminform"].form.errors["certificate"]
-    )
-    assert Certificate.objects.count() == 1
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
@@ -403,3 +328,126 @@ def test_csr_is_a_function_of_private_key_plus_subject_fields():
     csr_once = generate_csr(key_pem=my_private_key_pem, common_name="Foo")
     csr_twice = generate_csr(key_pem=my_private_key_pem, common_name="Foo")
     assert csr_once == csr_twice
+
+
+@pytest.mark.django_db
+def test_csr_does_not_renew_if_subject_dont_change(admin_client):
+    signing_request = SigningRequest.objects.create(
+        common_name="test.com",
+        country_name="US",
+        organization_name="Test Org",
+        state_or_province_name="Test State",
+        email_address="test@test.com",
+    )
+
+    orginal_csr = signing_request.csr
+    original_pk = signing_request.private_key
+
+    url = reverse(
+        "admin:simple_certmanager_signingrequest_change", args=[signing_request.pk]
+    )
+    response = admin_client.post(
+        url,
+        {
+            "common_name": "test.com",
+            "country_name": "US",
+            "organization_name": "Test Org",
+            "state_or_province_name": "Test State",
+            "email_address": "test@test.com",
+        },
+    )
+
+    assert response.status_code == 302
+    signing_request.refresh_from_db()
+    # PK should not have changed
+    assert signing_request.private_key == original_pk
+    # CSR should not have changed since suject and pk are the same
+    assert signing_request.csr != orginal_csr
+
+
+@pytest.mark.django_db
+def test_csr_renews_if_subject_changes(admin_client):
+    signing_request = SigningRequest.objects.create(
+        common_name="test.com",
+        country_name="US",
+        organization_name="Test Org",
+        state_or_province_name="Test State",
+        email_address="test@test.com",
+    )
+
+    original_csr = signing_request.csr
+    original_pk = signing_request.private_key
+
+    url = reverse(
+        "admin:simple_certmanager_signingrequest_change", args=[signing_request.pk]
+    )
+    response = admin_client.post(
+        url,
+        {
+            "common_name": "test.fr",
+            "country_name": "FR",
+            "organization_name": "Test Org",
+            "state_or_province_name": "Test State",
+            "email_address": "test@test.com",
+        },
+    )
+
+    assert response.status_code == 302
+    signing_request.refresh_from_db()
+    # PK should not have changed
+    assert signing_request.private_key == original_pk
+    # CSR should have changed since suject has changed
+    assert signing_request.csr != original_csr
+
+
+@pytest.mark.django_db
+def test_saving_public_certifate_disables_signing_request_fields(admin_client):
+    assert Certificate.objects.count() == 0
+
+    csr = SigningRequest.objects.create(
+        common_name="test.example.com",
+        organization_name="Test Organization",
+        state_or_province_name="Test State",
+        country_name="NL",
+        email_address="email@valid.com",
+    )
+
+    private_key = load_pem_x509_private_key(csr.private_key.encode("ascii"))
+    pub_cert = mkcert(
+        x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "test.example.com")]),
+        private_key,
+    )
+
+    cert_bytes = pub_cert.public_bytes(serialization.Encoding.PEM)
+    cert_pem = SimpleUploadedFile("cert.pem", cert_bytes)
+
+    form_data = {
+        "common_name": "test.example.com",
+        "organization_name": "Test Organization",
+        "country_name": "NL",
+        "state_or_province_name": "Test State",
+        "email_address": "email@valid.com",
+        "certificate": cert_pem,
+    }
+
+    # Valid certificate should create a Certificate instance
+    assert pub_cert.public_key() == private_key.public_key()
+
+    response = admin_client.post(
+        f"/admin/simple_certmanager/signingrequest/{csr.pk}/change/",
+        data=form_data,
+    )
+
+    assert response.status_code == 302
+    assert Certificate.objects.count() == 1
+
+    # Saving the same certificate again should not create a new instance
+    response = admin_client.get(
+        f"/admin/simple_certmanager/signingrequest/{csr.pk}/change/"
+    )
+    assert response.status_code == 200
+    # Check that the fields are readonly
+    # 9 readonly fields in the form
+    # csr, public_certificate, common_name, organization_name, country_name,
+    # state_or_province_name, locality_name, email_address, certificate
+    assert response.content.decode().count("readonly") == 9
