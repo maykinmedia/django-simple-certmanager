@@ -22,28 +22,6 @@ Installation
    correctly - the TLS certificates and keys are stored outside of ``settings.MEDIA_ROOT``
    for security reasons.
 
-
-Usage
------
-
-**Django admin**
-
-In the Django admin, you can create ``Certificate`` instances to (re-)use (mutual) TLS
-configuration.
-
-Whenever an instance is deleted (through the admin or code), the associated files are
-purged as well.
-
-You can create and download ``Certificate Signing Requests`` (CSR) through the
-admin as well.
-
-Upload the TLS certificate from the Certificate Authority (CA) to the 
-``Certificate Signing Request`` instance to verify it and store it in the database.
-
-Once signed, the signing request can not be modified anymore and can be safely deleted.
-
-The ``Certificate`` instance will then contain the certificate and the private key if valid.
-
 **Programmatically**
 
 The ``Certificate`` model is the public API of the library.
