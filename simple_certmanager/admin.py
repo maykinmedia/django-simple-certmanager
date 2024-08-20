@@ -98,7 +98,7 @@ class SigningRequestAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         my_urls = [
             path(
-                "dowload_csr/<int:pk>",
+                "download_csr/<int:pk>",
                 self.admin_site.admin_view(self.download_csr),
                 name="download_csr",
             )
@@ -108,7 +108,7 @@ class SigningRequestAdmin(admin.ModelAdmin):
     def download_csr(self, request, pk):
         # Here I don't use the change permission because it won't be given after
         # the CSR is signed and the certificate is uploaded.
-        if self.has_add_permission(request):
+        if self.has_view_permission(request):
             csr_instance = get_object_or_404(SigningRequest, pk=pk)
             csr_content = csr_instance.csr
             csr_filename = (

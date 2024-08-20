@@ -86,36 +86,3 @@ def generate_csr(
     )
     csr_pem = csr.public_bytes(serialization.Encoding.PEM).decode("ascii")
     return CSR(csr_pem)
-
-
-def generate_private_key_with_csr(
-    *,
-    common_name: str,
-    country: str = "",
-    state_or_province: str = "",
-    locality: str = "",
-    organization_name: str = "",
-    email: str = "",
-) -> tuple[PrivateKey, CSR]:
-    """
-    Generate and return a pair of private key + CSR.
-    :arg common_name: The Subject common name, required.
-    :arg country: The Subject country, as two-letter country code.
-    :arg state_or_province: The Subject state or province name.
-    :arg locality: The Subject locality (city) name.
-    :arg organization_name: The Subject organization name.
-    :arg email: The Subject email address.
-    """
-    if not common_name:
-        raise ValueError("You must provide a non-empty common_name.")
-    private_key = generate_private_key()
-    csr = generate_csr(
-        key_pem=private_key,
-        common_name=common_name,
-        country=country,
-        state_or_province=state_or_province,
-        locality=locality,
-        organization_name=organization_name,
-        email=email,
-    )
-    return private_key, csr

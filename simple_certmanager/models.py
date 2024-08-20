@@ -12,10 +12,7 @@ from cryptography.x509 import (
 )
 from privates.fields import PrivateMediaFileField
 
-from simple_certmanager.csr_generation import (
-    generate_csr,
-    generate_private_key_with_csr,
-)
+from simple_certmanager.csr_generation import generate_csr, generate_private_key
 
 from .constants import CertificateTypes
 from .mixins import DeleteFileFieldFilesMixin
@@ -63,16 +60,11 @@ class SigningRequest(models.Model):
         )
 
     def save(self, *args, **kwargs):
+        if not self.common_name:
+            raise Exception("Common name is required")
         # generate private key once
         if not self.private_key:
-            self.private_key, csr = generate_private_key_with_csr(
-                common_name=self.common_name,
-                organization_name=self.organization_name,
-                locality=self.locality_name,
-                state_or_province=self.state_or_province_name,
-                country=self.country_name,
-                email=self.email_address,
-            )
+            self.private_key = generate_private_key()
         super().save(*args, **kwargs)
 
     @property
