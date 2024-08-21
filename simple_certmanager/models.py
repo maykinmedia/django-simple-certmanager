@@ -92,6 +92,7 @@ class SigningRequest(models.Model):
         created_certificate.save()
         # Link the certificate to the signing request
         self.public_certificate = created_certificate
+        self.private_key = ""
         self.save()
         return created_certificate
 
