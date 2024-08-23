@@ -98,7 +98,7 @@ class SigningRequestAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         my_urls = [
             path(
-                "download_csr/<int:pk>",
+                "download_csr/<int:pk>/",
                 self.admin_site.admin_view(self.download_csr),
                 name="download_csr",
             )
@@ -133,11 +133,11 @@ class SigningRequestAdmin(admin.ModelAdmin):
         # after the object is saved the first time.
         if obj.common_name:
             return format_html(
-                '<a href="{}">Download CSR</a>'.format(
-                    reverse("admin:download_csr", args=(obj.pk,))
-                )
+                '<a href="{}">{}</a>',
+                reverse("admin:download_csr", args=(obj.pk,)),
+                _("Download CSR"),
             )
-        return _("CSR not generated yet")
+        return _("Save the signing request to be able to download it.")
 
     def has_change_permission(
         self, request: HttpRequest, obj: SigningRequest | None = None

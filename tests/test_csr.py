@@ -458,7 +458,10 @@ def test_csr_creation_and_display(admin_client):
 
     response = admin_client.get(add_url)
     assert response.status_code == 200
-    assert "CSR not generated yet" in response.content.decode()
+    assert (
+        "Save the signing request to be able to download it."
+        in response.content.decode()
+    )
 
     data = {
         "common_name": "test.com",
