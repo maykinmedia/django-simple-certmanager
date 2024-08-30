@@ -1,6 +1,7 @@
 import zipfile
 from io import BytesIO
 
+from django.contrib.messages import get_messages
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import FileResponse
 from django.urls import reverse
@@ -53,20 +54,18 @@ def test_admin_create_signing_request(admin_client):
     assert response.status_code == 200
 
     signing_request = SigningRequest.objects.get()
-    assert signing_request is not None
+
     assert signing_request.private_key != ""
     assert signing_request.csr != ""
     assert "BEGIN PRIVATE KEY" in signing_request.private_key
 
 
 @pytest.mark.django_db
-def test_save_generates_private_key_and_csr(signing_request):
+def test_save_generates_private_key(signing_request):
     assert signing_request.private_key == ""
-    assert signing_request.csr == ""
     signing_request.save()
     saved_private_key = signing_request.private_key
     assert signing_request.private_key != ""
-    assert signing_request.csr != ""
     # Additional saves do not overwrite the private key
     signing_request.save()
     assert signing_request.private_key == saved_private_key
@@ -119,7 +118,7 @@ def test_download_csr_single(admin_client):
 
     url = reverse("admin:simple_certmanager_signingrequest_changelist")
     response = admin_client.post(
-        url, {"action": "download_csr", "_selected_action": [signing_request.pk]}
+        url, {"action": "download_csr_action", "_selected_action": [signing_request.pk]}
     )
 
     assert isinstance(response, FileResponse)
@@ -150,7 +149,7 @@ def test_download_csr_multiple(admin_client):
     response = admin_client.post(
         url,
         {
-            "action": "download_csr",
+            "action": "download_csr_action",
             "_selected_action": [signing_request1.pk, signing_request2.pk],
         },
     )
@@ -331,7 +330,7 @@ def test_csr_is_a_function_of_private_key_plus_subject_fields():
 
 
 @pytest.mark.django_db
-def test_csr_does_not_renew_if_subject_dont_change(admin_client):
+def test_csr_does_not_change_if_subject_dont_change(admin_client):
     signing_request = SigningRequest.objects.create(
         common_name="test.com",
         country_name="US",
@@ -362,7 +361,7 @@ def test_csr_does_not_renew_if_subject_dont_change(admin_client):
     # PK should not have changed
     assert signing_request.private_key == original_pk
     # CSR should not have changed since suject and pk are the same
-    assert signing_request.csr != orginal_csr
+    assert signing_request.csr == orginal_csr
 
 
 @pytest.mark.django_db
@@ -451,3 +450,76 @@ def test_saving_public_certifate_disables_signing_request_fields(admin_client):
     # csr, public_certificate, common_name, organization_name, country_name,
     # state_or_province_name, locality_name, email_address, certificate
     assert response.content.decode().count("readonly") == 9
+
+
+@pytest.mark.django_db
+def test_csr_creation_and_display(admin_client):
+    add_url = reverse("admin:simple_certmanager_signingrequest_add")
+
+    response = admin_client.get(add_url)
+    assert response.status_code == 200
+    assert (
+        "Save the signing request to be able to download it."
+        in response.content.decode()
+    )
+
+    data = {
+        "common_name": "test.com",
+        "country_name": "US",
+        "organization_name": "Test Org",
+        "state_or_province_name": "Test State",
+        "email_address": "test@test.com",
+    }
+
+    response = admin_client.post(add_url, data, follow=True)
+    assert response.status_code == 200
+
+    signing_request = SigningRequest.objects.get()
+    assert signing_request.private_key != ""
+    assert signing_request.csr != ""
+    assert "BEGIN PRIVATE KEY" in signing_request.private_key
+    assert "Download CSR" in response.content.decode()
+
+    # Download CSR logged in as admin
+    download_csr_url = reverse("admin:download_csr", args=(signing_request.pk,))
+    response = admin_client.get(download_csr_url)
+    assert response.status_code == 200
+
+
+def test_csr_download_permission(client, django_user_model):
+    signing_request = SigningRequest.objects.create(
+        common_name="test.com",
+        country_name="US",
+        organization_name="Test Org",
+        state_or_province_name="Test State",
+        email_address="test@test.com",
+    )
+
+    # User without permission to add SigningRequests can't download CSR
+    user = django_user_model.objects.create_user(
+        username="test", password="test", is_staff=True
+    )
+    # Permissions
+    can_add = user.has_perm("simple_certmanager.add_signingrequest")
+    can_change = user.has_perm("simple_certmanager.change_signingrequest")
+    can_delete = user.has_perm("simple_certmanager.delete_signingrequest")
+    can_view = user.has_perm("simple_certmanager.view_signingrequest")
+
+    # Assertions to check user permissions
+    assert not can_add, "User should not have permission to add SigningRequest"
+    assert not can_change, "User should not have permission to change SigningRequest"
+    assert not can_delete, "User should not have permission to delete SigningRequest"
+    assert not can_view, "User should not have permission to view SigningRequest"
+
+    client.force_login(user)
+
+    download_csr_url = reverse("admin:download_csr", args=(signing_request.pk,))
+    response = client.get(download_csr_url)
+
+    url = "/admin/simple_certmanager/signingrequest/"
+    assert response.status_code == 302
+    assert response.url == url
+
+    messages = list(get_messages(response.wsgi_request))
+    assert len(messages) == 1
+    assert str(messages[0]) == "You do not have permission to download this CSR."
