@@ -48,7 +48,7 @@ class CertificateTests(TestCase):
 
         self.assertEqual(
             certificate.expiry_date,
-            datetime(2023, 2, 21, 14, 26, 51, tzinfo=timezone.utc),
+            datetime(2025, 9, 18, 14, 3, 39, tzinfo=timezone.utc),
         )
         self.assertEqual(
             "C: NL, ST: Some-State, O: Internet Widgits Pty Ltd", certificate.issuer
