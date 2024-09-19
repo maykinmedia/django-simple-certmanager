@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: 2.3.0\n"
+"Project-Id-Version: 2.4.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-18 09:15-0500\n"
+"POT-Creation-Date: 2024-09-19 07:52-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,23 +18,58 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: admin.py:38 models.py:21
+#: admin.py:65
+msgid "Subject information"
+msgstr "Subjectgegevens"
+
+#: admin.py:77
+msgid ""
+"The CSR will be generated after entering the information and submitting the "
+"data."
+msgstr ""
+"De CSR wordt gegenereerd nadat de nodige gegevens ingevuld en ingestuurd zijn."
+
+#: admin.py:84
+msgid "Signing Request (CSR)"
+msgstr "Ondertekenverzoek (CSR)"
+
+#: admin.py:90 forms.py:28
+msgid "Upload Signed Certificate"
+msgstr "Digitaal ondertekend certificaat uploaden"
+
+#: admin.py:124
+msgid "You do not have permission to download this CSR."
+msgstr "Je hebt onvoldoende rechten om dit CSR te downloaden."
+
+#: admin.py:138
+msgid "Download CSR"
+msgstr "CSR downloaden"
+
+#: admin.py:140
+msgid "Save the signing request to be able to download it."
+msgstr "Sla het ondertekenverzoek eerst op om het te kunnen downloaden."
+
+#: admin.py:192 models.py:102
 msgid "label"
 msgstr "label"
 
-#: admin.py:42
+#: admin.py:196
 msgid "serial number"
 msgstr "serienummer"
 
-#: admin.py:49 admin.py:58
+#: admin.py:203 admin.py:212 admin.py:221
 msgid "file not found"
 msgstr "bestand bestaat niet"
 
-#: admin.py:51
+#: admin.py:205
+msgid "valid from"
+msgstr "geldig vanaf"
+
+#: admin.py:214
 msgid "expiry date"
 msgstr "vervaldatum"
 
-#: admin.py:60
+#: admin.py:223
 msgid "valid key pair"
 msgstr "geldig sleutelpaar"
 
@@ -46,64 +81,116 @@ msgstr "Sleutelpaar"
 msgid "Certificate only"
 msgstr "Enkel certificaat"
 
-#: forms.py:29
+#: forms.py:24
+msgid ""
+"Upload the public certificate file here. This will be used to verify the "
+"signature against the CSR and create the certificate instance."
+msgstr ""
+"Upload het ontvangen certificaatbestand hier. We controleren dat dit certificaat "
+"overeenkomt met het ondertekenverzoek en maken dan een certificaat-record aan die "
+"je in de applicatie kan gebruiken."
+
+#: forms.py:55
+msgid ""
+"A certificate already exists for this CSR. Delete the certificate first."
+msgstr ""
+"Er bestaat al een certificaat-record voor dit CSR. Verwijder eerst het andere "
+"certificaat."
+
+#: forms.py:76
+msgid "Certificate does not match the signature from the actual CSR."
+msgstr "Het certificaat komt niet overeen met de privésleutel van de CSR."
+
+#: forms.py:95
 msgid "Passphrase"
 msgstr "Wachtwoordzin"
 
-#: forms.py:30
+#: forms.py:96
 msgid "Passphrase to decrypt the private key if it's encrypted."
-msgstr "Wachtwoordzin om de privésleutel te ontsleutelen als die versleuteld is."
+msgstr ""
+"Wachtwoordzin om de privésleutel te ontsleutelen als die versleuteld is."
 
-#: forms.py:68
+#: forms.py:134
 msgid "Provide a passphrase to decrypt the private key."
 msgstr "Je moet de wachtwoordzin opgegeven om de privésleutel te ontsleutelen."
 
-#: forms.py:76
+#: forms.py:142
 msgid "The private key is not encrypted, a passphrase is not required."
-msgstr "De privésleutel is niet versleuteld, je mag geen wachtwoordzin opgegeven."
+msgstr ""
+"De privésleutel is niet versleuteld, je mag geen wachtwoordzin opgegeven."
 
-#: forms.py:84
+#: forms.py:150
 msgid "Could not decrypt the private key with the provided passphrase."
-msgstr "De privésleutel kon niet ontsleuteld worden met de opgegeven wachtwoordzin."
+msgstr ""
+"De privésleutel kon niet ontsleuteld worden met de opgegeven wachtwoordzin."
 
-#: models.py:23
+#: models.py:26
+msgid "The common name for the certificate"
+msgstr "De \"common name\" voor het certificaat."
+
+#: models.py:29
+msgid "Two-letter country code"
+msgstr "2-letterige landcode, bijvoorbeeld 'NL'."
+
+#: models.py:32
+msgid "The name of the organization"
+msgstr "Naam van de organisatie die in het certificaat vertegenwoordigd wordt."
+
+#: models.py:35
+msgid "The state or province name"
+msgstr "De naam van de provincie."
+
+#: models.py:38
+msgid "The locality name"
+msgstr "Naam van de gemeente/stad."
+
+#: models.py:41
+msgid "Email address for the certificate"
+msgstr "E-mailadres in het certificaat."
+
+#: models.py:57
+#, python-brace-format
+msgid "Signing Request #{pk} for {common_name}"
+msgstr "Ondertekenverzoek #{pk} voor {common_name}"
+
+#: models.py:104
 msgid "Recognisable label for the certificate"
 msgstr "Label om het certificaat mee te identificeren"
 
-#: models.py:26
+#: models.py:107
 msgid "type"
 msgstr "type"
 
-#: models.py:30
+#: models.py:111
 msgid "Is this only a certificate or is there an associated private key?"
 msgstr ""
 "Gaat het enkel om het certificaat, of is er ook een bijhorende privésleutel?"
 
-#: models.py:34
+#: models.py:115
 msgid "public certificate"
 msgstr "publiek certificaat"
 
-#: models.py:35
+#: models.py:116
 msgid "The content of the certificate"
 msgstr "De inhoud van het certificaat, in PEM-formaat"
 
-#: models.py:40
+#: models.py:121
 msgid "private key"
 msgstr "privésleutel"
 
-#: models.py:41
+#: models.py:122
 msgid "The content of the private key"
 msgstr "De inhoud van de privésleutel, in PEM-formaat"
 
-#: models.py:51
+#: models.py:132
 msgid "certificate"
 msgstr "certificaat"
 
-#: models.py:52
+#: models.py:133
 msgid "certificates"
 msgstr "certificaten"
 
-#: models.py:55
+#: models.py:136
 msgid "(missing label)"
 msgstr "(label ontbreekt)"
 
@@ -124,5 +211,6 @@ msgstr ""
 #: validators.py:56
 msgid "Private key may not be encrypted."
 msgstr ""
-"De privésleutel mag niet versleuteld zijn. Indien je een versleutelde privésleutel "
-"toevoegt, zorg er dan voor dat je de juiste wachtwoordzin opgeeft."
+"De privésleutel mag niet versleuteld zijn. Indien je een versleutelde "
+"privésleutel toevoegt, zorg er dan voor dat je de juiste wachtwoordzin "
+"opgeeft."

@@ -2,6 +2,19 @@
 Changelog
 =========
 
+2.4.0
+=====
+
+*September 19, 2024*
+
+Feature release: certificate signing requests.
+
+* [#41, #44, #45, #47] You can now create certificate signing requests from the admin
+  interface, instead of needing to run OpenSSL somewhere and then copy/upload all the
+  relevant files.
+* Fixed test failures in projects when using the ``CertificateFactory`` - the bundled
+  private key/public certificate have been regenerated as they had expired.
+
 2.3.0
 =====
 
