@@ -2,6 +2,13 @@
 Changelog
 =========
 
+2.4.1
+=====
+
+*September 19, 2024*
+
+Fixed some additional certificates that needed to be regenerated.
+
 2.4.0
 =====
 
