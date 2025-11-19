@@ -59,7 +59,7 @@ def leaf_keypair(
 
 @pytest.fixture
 def encrypted_keypair(
-    leaf_keypair: tuple[rsa.RSAPrivateKey, bytes]
+    leaf_keypair: tuple[rsa.RSAPrivateKey, bytes],
 ) -> tuple[bytes, bytes]:
     """
     A private key + certificate pair where the private key is encrypted.
