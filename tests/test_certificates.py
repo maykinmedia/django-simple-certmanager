@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
+from unittest.mock import PropertyMock, patch
 
 from django.contrib.admin import AdminSite
 from django.contrib.auth.models import User
@@ -57,6 +58,28 @@ class CertificateTests(TestCase):
             "C: NL, ST: Some-State, O: Internet Widgits Pty Ltd", certificate.subject
         )
         self.assertRegex(certificate.serial_number, r"[0-9A-F]{2}(?::[0-9A-F]{2}){15}")
+
+    def test_serial_number_zero_padding(self):
+        with open(TEST_FILES / "test.certificate", "rb") as client_certificate_f:
+            certificate = Certificate.objects.create(
+                label="Test certificate",
+                type=CertificateTypes.cert_only,
+                public_certificate=File(client_certificate_f, name="test.certificate"),
+            )
+
+        # Test with a small serial number that needs zero-padding
+        with patch.object(
+            type(certificate.certificate),
+            "serial_number",
+            new_callable=PropertyMock,
+            return_value=0x0A0B1C0D0E0F,
+        ):
+            serial = certificate.serial_number
+
+            self.assertEqual(
+                serial,
+                "0A:0B:1C:0D:0E:0F",  # ...as opposed to "A0:B1:C0:D0:E0:F"
+            )
 
     def test_creating_empty_admin_detail(self):
         form = CertificateAdminForm()

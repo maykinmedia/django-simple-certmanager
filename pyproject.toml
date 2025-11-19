@@ -57,6 +57,7 @@ tests = [
     "black",
     "flake8",
     "freezegun",
+    "hypothesis",
 ]
 type-checking = [
     "django-stubs[compatible-mypy]",
