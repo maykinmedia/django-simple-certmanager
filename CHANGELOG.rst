@@ -2,6 +2,14 @@
 Changelog
 =========
 
+2.4.2
+=====
+
+*November 25, 2025*
+
+* [#54] Add a quality-of-life improvement to the rendering of certificate serial numbers
+  in the admin.
+
 2.4.1
 =====
 
