@@ -75,6 +75,15 @@ def pretty_print_certificate_components(x509name: x509.Name) -> str:
     return ", ".join(bits)
 
 
+def pretty_print_serial_number(x509sn: int):
+    num_bytes = (x509sn.bit_length() + 7) // 8
+    byte_values = x509sn.to_bytes(
+        num_bytes or 1,  # handle 0, e.g. b'' -> b'\x00'
+        byteorder="big",
+    )
+    return ":".join(f"{b:02X}" for b in byte_values)
+
+
 T = TypeVar("T")
 P = ParamSpec("P")
 

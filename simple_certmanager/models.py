@@ -16,7 +16,11 @@ from simple_certmanager.csr_generation import generate_csr, generate_private_key
 
 from .constants import CertificateTypes
 from .mixins import DeleteFileFieldFilesMixin
-from .utils import load_pem_x509_private_key, pretty_print_certificate_components
+from .utils import (
+    load_pem_x509_private_key,
+    pretty_print_certificate_components,
+    pretty_print_serial_number,
+)
 from .validators import PrivateKeyValidator, PublicCertValidator
 
 
@@ -177,10 +181,7 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
 
     @property
     def serial_number(self) -> str:
-        x509sn = self.certificate.serial_number
-        sn = hex(x509sn)[2:].upper()
-        bytes = (sn[i : i + 2] for i in range(0, len(sn), 2))
-        return ":".join(bytes)
+        return pretty_print_serial_number(self.certificate.serial_number)
 
     def is_valid_key_pair(self) -> None | bool:
         if not self.private_key:
