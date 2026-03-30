@@ -1,3 +1,4 @@
+import datetime
 from io import BytesIO
 from zipfile import ZipFile
 
@@ -7,13 +8,18 @@ from django.shortcuts import get_object_or_404
 from django.urls import path, reverse
 from django.utils.html import format_html
 from django.utils.text import slugify
+from django.utils.timesince import timesince, timeuntil
 from django.utils.translation import gettext_lazy as _
 
 from privates.admin import PrivateMediaMixin
 
 from .forms import CertificateAdminForm, SigningRequestAdminForm
 from .models import Certificate, SigningRequest
-from .utils import suppress_cryptography_errors
+from .utils import (
+    PrivateKeyError,
+    file_not_found_fallback,
+    suppress_cryptography_errors,
+)
 
 
 def download_csr_action(modeladmin, request, queryset):
@@ -169,22 +175,41 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     fields = (
         "label",
         "serial_number",
+        "issuer",
+        "subject",
+        "not_valid_before",
+        "not_valid_before_relative",
+        "not_valid_after",
+        "not_valid_after_relative",
+        "is_in_validity_period",
         "type",
         "public_certificate",
         "private_key",
         "private_key_passphrase",
+        "is_valid_key_pair",
     )
     list_display = (
         "get_label",
         "serial_number",
         "type",
-        "valid_from",
-        "expiry_date",
+        "not_valid_before",
+        "not_valid_after",
+        "is_in_validity_period",
         "is_valid_key_pair",
     )
     list_filter = ("type",)
     search_fields = ("label", "type")
-    readonly_fields = ("serial_number",)
+    readonly_fields = (
+        "serial_number",
+        "issuer",
+        "subject",
+        "not_valid_before",
+        "not_valid_before_relative",
+        "not_valid_after",
+        "not_valid_after_relative",
+        "is_in_validity_period",
+        "is_valid_key_pair",
+    )
 
     private_media_fields = ("public_certificate", "private_key")
     private_media_no_download_fields = ("private_key",)
@@ -195,36 +220,53 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
 
     @admin.display(description=_("serial number"))
     @suppress_cryptography_errors
+    @file_not_found_fallback(_("file not found"))
     def serial_number(self, obj: Certificate):
-        # alias model property to catch errors
-        try:
-            return obj.serial_number
-        except FileNotFoundError:
-            return _("file not found")
+        return obj.serial_number
 
-    @admin.display(description=_("valid from"))
+    @admin.display(description=_("not valid before"))
     @suppress_cryptography_errors
-    def valid_from(self, obj: Certificate):
-        # alias model property to catch errors
-        try:
-            return obj.valid_from
-        except FileNotFoundError:
-            return _("file not found")
+    @file_not_found_fallback(_("file not found"))
+    def not_valid_before(self, obj: Certificate):
+        return obj.not_valid_before
 
-    @admin.display(description=_("expiry date"))
+    @admin.display(description=_("not valid after"))
     @suppress_cryptography_errors
-    def expiry_date(self, obj: Certificate):
-        # alias model property to catch errors
-        try:
-            return obj.expiry_date
-        except FileNotFoundError:
-            return _("file not found")
+    @file_not_found_fallback(_("file not found"))
+    def not_valid_after(self, obj: Certificate):
+        return obj.not_valid_after
+
+    def _relative_time(self, dt: datetime.datetime) -> str:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if dt > now:
+            return _("in {until}").format(until=timeuntil(dt))
+
+        return _("{since} ago").format(since=timesince(dt))
+
+    @admin.display(description=_("not valid before (relative)"))
+    @suppress_cryptography_errors
+    @file_not_found_fallback(_("file not found"))
+    def not_valid_before_relative(self, obj: Certificate):
+        return self._relative_time(obj.not_valid_before)
+
+    @admin.display(description=_("not valid after (relative)"))
+    @suppress_cryptography_errors
+    @file_not_found_fallback(_("file not found"))
+    def not_valid_after_relative(self, obj: Certificate):
+        return self._relative_time(obj.not_valid_after)
+
+    @admin.display(description=_("within validity period"), boolean=True)
+    @suppress_cryptography_errors
+    @file_not_found_fallback(None)
+    def is_in_validity_period(self, obj: Certificate) -> bool | None:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        return obj.not_valid_before <= now <= obj.not_valid_after
 
     @admin.display(description=_("valid key pair"), boolean=True)
     @suppress_cryptography_errors
+    @file_not_found_fallback(None)
     def is_valid_key_pair(self, obj: Certificate) -> bool | None:
-        # alias model property to catch errors
         try:
             return obj.is_valid_key_pair()
-        except FileNotFoundError:
+        except PrivateKeyError:
             return None

@@ -160,13 +160,13 @@ class Certificate(DeleteFileFieldFilesMixin, models.Model):
         return self._private_key_obj
 
     @property
-    def valid_from(self) -> datetime:
+    def not_valid_before(self) -> datetime:
         # TODO: should probably be stored in a DB column after saving the file so
         # we can query on it to report (nearly) expired certificates.
         return self.certificate.not_valid_before_utc
 
     @property
-    def expiry_date(self) -> datetime:
+    def not_valid_after(self) -> datetime:
         # TODO: should probably be stored in a DB column after saving the file so
         # we can query on it to report (nearly) expired certificates.
         return self.certificate.not_valid_after_utc

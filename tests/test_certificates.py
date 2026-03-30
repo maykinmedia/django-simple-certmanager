@@ -48,7 +48,7 @@ class CertificateTests(TestCase):
             )
 
         self.assertEqual(
-            certificate.expiry_date,
+            certificate.not_valid_after,
             datetime(2025, 9, 18, 14, 3, 39, tzinfo=timezone.utc),
         )
         self.assertEqual(
