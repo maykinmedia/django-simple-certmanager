@@ -11,6 +11,7 @@ from django.utils.text import slugify
 from django.utils.timesince import timesince, timeuntil
 from django.utils.translation import gettext_lazy as _
 
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from privates.admin import PrivateMediaMixin
 
 from .forms import CertificateAdminForm, SigningRequestAdminForm
@@ -184,6 +185,7 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
         "is_in_validity_period",
         "type",
         "public_certificate",
+        "public_key",
         "private_key",
         "private_key_passphrase",
         "is_valid_key_pair",
@@ -208,6 +210,7 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
         "not_valid_after",
         "not_valid_after_relative",
         "is_in_validity_period",
+        "public_key",
         "is_valid_key_pair",
     )
 
@@ -261,6 +264,18 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     def is_in_validity_period(self, obj: Certificate) -> bool | None:
         now = datetime.datetime.now(datetime.timezone.utc)
         return obj.not_valid_before <= now <= obj.not_valid_after
+
+    @admin.display(description=_("public key"))
+    @suppress_cryptography_errors
+    @file_not_found_fallback(_("file not found"))
+    def public_key(self, obj: Certificate):
+        if not obj.public_certificate:
+            return None
+
+        pem = obj.certificate.public_key().public_bytes(
+            Encoding.PEM, PublicFormat.SubjectPublicKeyInfo
+        )
+        return format_html("<pre>{}</pre>", pem.decode("ascii"))
 
     @admin.display(description=_("valid key pair"), boolean=True)
     @suppress_cryptography_errors

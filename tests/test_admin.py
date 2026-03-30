@@ -1,5 +1,6 @@
 import datetime
 import logging
+import re
 from io import BytesIO
 from pathlib import Path
 
@@ -354,6 +355,29 @@ def test_detail_view_serial_number_displayed(
 
     assert response.status_code == 200
     assertContains(response, certificate.serial_number)
+
+
+def test_detail_view_public_key_shown_as_pre(
+    temp_private_root, admin_client, leaf_keypair
+):
+    _key, cert_pem = leaf_keypair
+    certificate = Certificate.objects.create(
+        label="Test certificate",
+        type=CertificateTypes.cert_only,
+        public_certificate=File(BytesIO(cert_pem), name="cert.pem"),
+    )
+    url = reverse("admin:simple_certmanager_certificate_change", args=(certificate.pk,))
+
+    response = admin_client.get(url)
+
+    assert response.status_code == 200
+    doc = pq(response.content)
+    pre = doc(".field-public_key pre")
+    assert pre.length == 1
+    assert re.match(
+        r"-----BEGIN PUBLIC KEY-----[\s]+[A-Za-z0-9+/=\s]+-----END PUBLIC KEY-----",
+        pre.text(),
+    )
 
 
 def test_is_in_validity_period_false_for_expired_cert(
