@@ -173,22 +173,54 @@ class CertificateAdmin(PrivateMediaMixin, admin.ModelAdmin):
     model: type[Certificate]
     form = CertificateAdminForm
 
-    fields = (
-        "label",
-        "serial_number",
-        "issuer",
-        "subject",
-        "not_valid_before",
-        "not_valid_before_relative",
-        "not_valid_after",
-        "not_valid_after_relative",
-        "is_in_validity_period",
-        "type",
-        "public_certificate",
-        "public_key",
-        "private_key",
-        "private_key_passphrase",
-        "is_valid_key_pair",
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": ("label", "type"),
+            },
+        ),
+        (
+            _("Certificate identity"),
+            {
+                "fields": (
+                    "serial_number",
+                    "issuer",
+                    "subject",
+                ),
+            },
+        ),
+        (
+            _("Validity"),
+            {
+                "fields": (
+                    "not_valid_before",
+                    "not_valid_before_relative",
+                    "not_valid_after",
+                    "not_valid_after_relative",
+                    "is_in_validity_period",
+                ),
+            },
+        ),
+        (
+            _("Certificate and public key"),
+            {
+                "fields": (
+                    "public_certificate",
+                    "public_key",
+                ),
+            },
+        ),
+        (
+            _("Private key"),
+            {
+                "fields": (
+                    "private_key",
+                    "private_key_passphrase",
+                    "is_valid_key_pair",
+                ),
+            },
+        ),
     )
     list_display = (
         "get_label",
