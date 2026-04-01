@@ -22,6 +22,8 @@ def mkcert(
     issuer: x509.Certificate | None = None,
     issuer_key: rsa.RSAPrivateKey | None = None,
     can_issue: bool = True,
+    not_valid_before: datetime.datetime | None = None,
+    not_valid_after: datetime.datetime | None = None,
 ):
     public_key = subject_key.public_key()
     issuer_name = issuer.subject if issuer else subject
@@ -31,8 +33,8 @@ def mkcert(
         .issuer_name(issuer_name)
         .public_key(public_key)
         .serial_number(x509.random_serial_number())
-        .not_valid_before(timezone.now())
-        .not_valid_after(timezone.now() + datetime.timedelta(days=1))
+        .not_valid_before(not_valid_before or timezone.now())
+        .not_valid_after(not_valid_after or timezone.now() + datetime.timedelta(days=1))
         .add_extension(
             x509.SubjectAlternativeName([x509.DNSName("localhost")]),
             critical=False,

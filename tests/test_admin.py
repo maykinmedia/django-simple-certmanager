@@ -1,20 +1,31 @@
+import datetime
 import logging
+import re
 from io import BytesIO
 from pathlib import Path
 
 from django.core.files import File
 from django.test import Client
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.timesince import timesince, timeuntil
 from django.utils.translation import gettext_lazy as _
 
 import pytest
+from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
+from freezegun import freeze_time
 from pyquery import PyQuery as pq
 from pytest_django.asserts import assertContains
 
 from simple_certmanager.constants import CertificateTypes
 from simple_certmanager.models import Certificate
+from simple_certmanager.test.certificate_generation import (
+    cert_to_pem,
+    gen_key,
+    mkcert,
+)
 from simple_certmanager.utils import decrypted_key_to_pem
 
 TEST_FILES = Path(__file__).parent / "data"
@@ -130,7 +141,7 @@ def test_list_view_invalid_private_key(temp_private_root, admin_client, caplog):
     assert caplog.records[0].levelname == "WARNING"
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 def test_detail_view_invalid_public_cert(temp_private_root, admin_client, caplog):
     """Assert that `change_view` works if DB contains a corrupted public cert
 
@@ -176,7 +187,11 @@ def test_detail_view_invalid_private_key(temp_private_root, admin_client, caplog
     response = admin_client.get(url)
 
     assert response.status_code == 200
-    assert caplog.records == []
+    assert (
+        caplog.records[0].message
+        == "Suppressed exception while attempting to process PKI data"
+    )
+    assert caplog.records[0].levelname == "WARNING"
 
 
 def test_upload_keypair_with_encrypted_key(
@@ -281,3 +296,113 @@ def test_upload_keypair_not_encrypted_with_passphrase(
         response,
         _("The private key is not encrypted, a passphrase is not required."),
     )
+
+
+def test_add_view_no_certificate_loads(admin_client):
+    url = reverse("admin:simple_certmanager_certificate_add")
+    response = admin_client.get(url)
+    assert response.status_code == 200
+
+
+def test_detail_view_shows_relative_time_and_validity(
+    temp_private_root, admin_client, root_cert, root_key
+):
+    frozen_now = datetime.datetime(2024, 6, 15, 12, 0, 0, tzinfo=datetime.timezone.utc)
+    not_valid_before = frozen_now - datetime.timedelta(days=5)
+    valid_until = frozen_now + datetime.timedelta(days=30)
+    privkey = gen_key()
+    cert_pem = cert_to_pem(
+        mkcert(
+            subject=x509.Name(
+                [x509.NameAttribute(x509.oid.NameOID.COMMON_NAME, "test.example.org")]
+            ),
+            subject_key=privkey,
+            issuer=root_cert,
+            issuer_key=root_key,
+            not_valid_before=not_valid_before,
+            not_valid_after=valid_until,
+        )
+    )
+    certificate = Certificate.objects.create(
+        label="Test certificate",
+        type=CertificateTypes.cert_only,
+        public_certificate=File(BytesIO(cert_pem), name="cert.pem"),
+    )
+    url = reverse("admin:simple_certmanager_certificate_change", args=(certificate.pk,))
+
+    with freeze_time(frozen_now):
+        response = admin_client.get(url)
+
+    assert response.status_code == 200
+    assertContains(response, f"{timesince(not_valid_before, now=frozen_now)} ago")
+    assertContains(response, f"in {timeuntil(valid_until, now=frozen_now)}")
+    doc = pq(response.content)
+    assert doc('.field-is_in_validity_period img[alt="True"]').length == 1
+
+
+def test_detail_view_serial_number_displayed(
+    temp_private_root, admin_client, leaf_keypair
+):
+    _key, cert_pem = leaf_keypair
+    certificate = Certificate.objects.create(
+        label="Test certificate",
+        type=CertificateTypes.cert_only,
+        public_certificate=File(BytesIO(cert_pem), name="cert.pem"),
+    )
+    url = reverse("admin:simple_certmanager_certificate_change", args=(certificate.pk,))
+
+    response = admin_client.get(url)
+
+    assert response.status_code == 200
+    assertContains(response, certificate.serial_number)
+
+
+def test_detail_view_public_key_shown_as_pre(
+    temp_private_root, admin_client, leaf_keypair
+):
+    _key, cert_pem = leaf_keypair
+    certificate = Certificate.objects.create(
+        label="Test certificate",
+        type=CertificateTypes.cert_only,
+        public_certificate=File(BytesIO(cert_pem), name="cert.pem"),
+    )
+    url = reverse("admin:simple_certmanager_certificate_change", args=(certificate.pk,))
+
+    response = admin_client.get(url)
+
+    assert response.status_code == 200
+    doc = pq(response.content)
+    pre = doc(".field-public_key pre")
+    assert pre.length == 1
+    assert re.match(
+        r"-----BEGIN PUBLIC KEY-----[\s]+[A-Za-z0-9+/=\s]+-----END PUBLIC KEY-----",
+        pre.text(),
+    )
+
+
+def test_is_in_validity_period_false_for_expired_cert(
+    temp_private_root, admin_client, root_cert, root_key
+):
+    privkey = gen_key()
+    expired_cert = mkcert(
+        subject=x509.Name(
+            [x509.NameAttribute(x509.oid.NameOID.COMMON_NAME, "expired.example.org")]
+        ),
+        subject_key=privkey,
+        issuer=root_cert,
+        issuer_key=root_key,
+        not_valid_before=timezone.now() - datetime.timedelta(days=2),
+        not_valid_after=timezone.now() - datetime.timedelta(days=1),
+    )
+    certificate = Certificate.objects.create(
+        label="Expired certificate",
+        type=CertificateTypes.cert_only,
+        public_certificate=File(BytesIO(cert_to_pem(expired_cert)), name="cert.pem"),
+    )
+    url = reverse("admin:simple_certmanager_certificate_change", args=(certificate.pk,))
+
+    response = admin_client.get(url)
+
+    assert response.status_code == 200
+    doc = pq(response.content)
+    assert doc('.field-is_in_validity_period img[alt="False"]').length == 1

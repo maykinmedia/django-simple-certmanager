@@ -88,6 +88,24 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
+def file_not_found_fallback(fallback):
+    """
+    Decorator that catches ``FileNotFoundError`` and returns ``fallback`` instead.
+    """
+
+    def decorator(func: Callable[P, T]) -> Callable[P, T]:
+        @wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs):
+            try:
+                return func(*args, **kwargs)
+            except FileNotFoundError:
+                return fallback
+
+        return wrapper
+
+    return decorator
+
+
 def suppress_cryptography_errors(func: Callable[P, T], /) -> Callable[P, T | None]:
     """
     Decorator to suppress exceptions thrown while processing PKI data.
