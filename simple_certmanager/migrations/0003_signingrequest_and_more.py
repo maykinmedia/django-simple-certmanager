@@ -82,7 +82,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="signingrequest",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(
                         models.Q(("csr", ""), ("private_key", "")),
                         models.Q(
