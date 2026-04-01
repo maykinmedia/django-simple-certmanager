@@ -27,13 +27,6 @@ Features
 Installation
 ============
 
-Requirements
-------------
-
-* Python 3.10 or above
-* Django 3.2 or newer
-
-
 Install
 -------
 
