@@ -1,12 +1,6 @@
 Quickstart
 ==========
 
-Requirements
-------------
-
-* Python 3.10 or newer
-* Django 3.2 or newer
-
 Installation
 ------------
 
