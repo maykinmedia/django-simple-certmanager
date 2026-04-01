@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: 2.5.0\n"
+"Project-Id-Version: 3.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-19 07:52-0500\n"
+"POT-Creation-Date: 2026-04-01 11:51-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,58 +18,102 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: admin.py:65
+#: admin.py:72
 msgid "Subject information"
 msgstr "Subjectgegevens"
 
-#: admin.py:77
+#: admin.py:84
 msgid ""
 "The CSR will be generated after entering the information and submitting the "
 "data."
 msgstr ""
-"De CSR wordt gegenereerd nadat de nodige gegevens ingevuld en ingestuurd zijn."
+"De CSR wordt gegenereerd nadat de nodige gegevens ingevuld en ingestuurd "
+"zijn."
 
-#: admin.py:84
+#: admin.py:91
 msgid "Signing Request (CSR)"
 msgstr "Ondertekenverzoek (CSR)"
 
-#: admin.py:90 forms.py:28
+#: admin.py:97 forms.py:28
 msgid "Upload Signed Certificate"
 msgstr "Digitaal ondertekend certificaat uploaden"
 
-#: admin.py:124
+#: admin.py:131
 msgid "You do not have permission to download this CSR."
 msgstr "Je hebt onvoldoende rechten om dit CSR te downloaden."
 
-#: admin.py:138
+#: admin.py:145
 msgid "Download CSR"
 msgstr "CSR downloaden"
 
-#: admin.py:140
+#: admin.py:147
 msgid "Save the signing request to be able to download it."
 msgstr "Sla het ondertekenverzoek eerst op om het te kunnen downloaden."
 
-#: admin.py:192 models.py:102
+#: admin.py:184
+msgid "Certificate identity"
+msgstr "Certificaatgegevens"
+
+#: admin.py:194
+msgid "Validity"
+msgstr "Geldigheid"
+
+#: admin.py:206
+msgid "Certificate and public key"
+msgstr "Certificaat en publieke sleutel"
+
+#: admin.py:215
+msgid "Private key"
+msgstr "Privésleutel"
+
+#: admin.py:252 models.py:106
 msgid "label"
 msgstr "label"
 
-#: admin.py:196
+#: admin.py:256
 msgid "serial number"
 msgstr "serienummer"
 
-#: admin.py:203 admin.py:212 admin.py:221
+#: admin.py:258 admin.py:264 admin.py:270 admin.py:283 admin.py:289
+#: admin.py:302
 msgid "file not found"
 msgstr "bestand bestaat niet"
 
-#: admin.py:205
-msgid "valid from"
+#: admin.py:262
+msgid "not valid before"
 msgstr "geldig vanaf"
 
-#: admin.py:214
-msgid "expiry date"
-msgstr "vervaldatum"
+#: admin.py:268
+msgid "not valid after"
+msgstr "geldig tot"
 
-#: admin.py:223
+#: admin.py:277
+#, python-brace-format
+msgid "in {until}"
+msgstr "over {until}"
+
+#: admin.py:279
+#, python-brace-format
+msgid "{since} ago"
+msgstr "{since} geleden"
+
+#: admin.py:281
+msgid "not valid before (relative)"
+msgstr "geldig vanaf (relatief)"
+
+#: admin.py:287
+msgid "not valid after (relative)"
+msgstr "geldig tot (relatief)"
+
+#: admin.py:293
+msgid "within validity period"
+msgstr "binnen geldigheidsduur"
+
+#: admin.py:300
+msgid "public key"
+msgstr "publieke sleutel"
+
+#: admin.py:312
 msgid "valid key pair"
 msgstr "geldig sleutelpaar"
 
@@ -86,16 +130,16 @@ msgid ""
 "Upload the public certificate file here. This will be used to verify the "
 "signature against the CSR and create the certificate instance."
 msgstr ""
-"Upload het ontvangen certificaatbestand hier. We controleren dat dit certificaat "
-"overeenkomt met het ondertekenverzoek en maken dan een certificaat-record aan die "
-"je in de applicatie kan gebruiken."
+"Upload het ontvangen certificaatbestand hier. We controleren dat dit "
+"certificaat overeenkomt met het ondertekenverzoek en maken dan een "
+"certificaat-record aan die je in de applicatie kan gebruiken."
 
 #: forms.py:55
 msgid ""
 "A certificate already exists for this CSR. Delete the certificate first."
 msgstr ""
-"Er bestaat al een certificaat-record voor dit CSR. Verwijder eerst het andere "
-"certificaat."
+"Er bestaat al een certificaat-record voor dit CSR. Verwijder eerst het "
+"andere certificaat."
 
 #: forms.py:76
 msgid "Certificate does not match the signature from the actual CSR."
@@ -124,73 +168,73 @@ msgid "Could not decrypt the private key with the provided passphrase."
 msgstr ""
 "De privésleutel kon niet ontsleuteld worden met de opgegeven wachtwoordzin."
 
-#: models.py:26
+#: models.py:30
 msgid "The common name for the certificate"
 msgstr "De \"common name\" voor het certificaat."
 
-#: models.py:29
+#: models.py:33
 msgid "Two-letter country code"
 msgstr "2-letterige landcode, bijvoorbeeld 'NL'."
 
-#: models.py:32
+#: models.py:36
 msgid "The name of the organization"
 msgstr "Naam van de organisatie die in het certificaat vertegenwoordigd wordt."
 
-#: models.py:35
+#: models.py:39
 msgid "The state or province name"
 msgstr "De naam van de provincie."
 
-#: models.py:38
+#: models.py:42
 msgid "The locality name"
 msgstr "Naam van de gemeente/stad."
 
-#: models.py:41
+#: models.py:45
 msgid "Email address for the certificate"
 msgstr "E-mailadres in het certificaat."
 
-#: models.py:57
+#: models.py:61
 #, python-brace-format
 msgid "Signing Request #{pk} for {common_name}"
 msgstr "Ondertekenverzoek #{pk} voor {common_name}"
 
-#: models.py:104
+#: models.py:108
 msgid "Recognisable label for the certificate"
 msgstr "Label om het certificaat mee te identificeren"
 
-#: models.py:107
+#: models.py:111
 msgid "type"
 msgstr "type"
 
-#: models.py:111
+#: models.py:115
 msgid "Is this only a certificate or is there an associated private key?"
 msgstr ""
 "Gaat het enkel om het certificaat, of is er ook een bijhorende privésleutel?"
 
-#: models.py:115
+#: models.py:119
 msgid "public certificate"
 msgstr "publiek certificaat"
 
-#: models.py:116
+#: models.py:120
 msgid "The content of the certificate"
 msgstr "De inhoud van het certificaat, in PEM-formaat"
 
-#: models.py:121
+#: models.py:125
 msgid "private key"
 msgstr "privésleutel"
 
-#: models.py:122
+#: models.py:126
 msgid "The content of the private key"
 msgstr "De inhoud van de privésleutel, in PEM-formaat"
 
-#: models.py:132
+#: models.py:136
 msgid "certificate"
 msgstr "certificaat"
 
-#: models.py:133
+#: models.py:137
 msgid "certificates"
 msgstr "certificaten"
 
-#: models.py:136
+#: models.py:140
 msgid "(missing label)"
 msgstr "(label ontbreekt)"
 
