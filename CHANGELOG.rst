@@ -2,6 +2,27 @@
 Changelog
 =========
 
+3.0.0
+=====
+
+*April 1, 2026*
+
+**Breaking changes**
+
+* Dropped support for Python 3.10 and 3.11
+* Dropped support for Django 3.2 (EOL April 2024) and 4.2 (EOL April 2026)
+
+**New supported versions**
+
+* Confirmed support for Python 3.13 and 3.14
+* Added support for Django 5.2 (LTS) and 6.0
+
+**Other changes**
+
+* Expanded certificate fields and attributes exposed in the admin
+* The public key is now shown on the certificate detail page
+* Admin fields are now organized into fieldsets
+
 2.5.0
 =====
 
