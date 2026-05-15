@@ -10,7 +10,6 @@ from django.test import RequestFactory, TestCase, TransactionTestCase
 
 import pytest
 from cryptography.x509 import Certificate as CryptographyCertificate
-from privates.test import temp_private_root
 
 from simple_certmanager.admin import CertificateAdmin
 from simple_certmanager.constants import CertificateTypes
@@ -33,7 +32,7 @@ def cert_with_keypair(db, temp_private_root, leaf_keypair):
     )
 
 
-@temp_private_root()
+@pytest.mark.usefixtures("temp_private_root")
 class CertificateTests(TestCase):
     def test_calculated_properties(self):
         with (
@@ -228,7 +227,7 @@ class CertificateTests(TestCase):
         self.assertIsNotNone(form.errors["private_key"])
 
 
-@temp_private_root()
+@pytest.mark.usefixtures("temp_private_root")
 class TestCertificateFilesDeletion(TransactionTestCase):
     def test_certificate_deletion_deletes_files(self):
         with open(TEST_FILES / "test.certificate", "rb") as certificate_f:

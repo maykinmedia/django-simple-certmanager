@@ -54,11 +54,27 @@ USE_TZ = True
 
 DEBUG = True
 
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+    "privates": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {
+            "location": os.path.join(BASE_DIR, "private-media"),
+            "base_url": "/private-media/",
+        },
+    },
+}
+
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
 
-PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR, "private-media")
-PRIVATE_MEDIA_URL = "/private-media/"
+SENDFILE_ROOT = os.path.join(BASE_DIR, "private-media")
+SENDFILE_URL = "/private-media/"

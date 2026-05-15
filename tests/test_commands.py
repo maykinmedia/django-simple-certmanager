@@ -1,3 +1,4 @@
+import shutil
 import zipfile
 from pathlib import Path
 
@@ -5,8 +6,9 @@ from django.core.files import File
 from django.core.management import call_command
 from django.test import TestCase
 
+import pytest
 from freezegun import freeze_time
-from privates.test import temp_private_root
+from privates.storages import private_media_storage
 
 from simple_certmanager.constants import CertificateTypes
 from simple_certmanager.models import Certificate
@@ -15,15 +17,20 @@ TEST_FILES = Path(__file__).parent / "data"
 
 
 @freeze_time("2022-01-01")
-@temp_private_root()
+@pytest.mark.usefixtures("temp_private_root")
 class CertificateDumpTests(TestCase):
     def setUp(self) -> None:
         super().setUp()
+
+        def _reset_storage():
+            shutil.rmtree(private_media_storage.location)
 
         def remove_certs_archive():
             Path("certificates.zip").unlink()
 
         self.addCleanup(remove_certs_archive)
+        _reset_storage()
+        self.addCleanup(_reset_storage)
 
     def test_dump_certificate_files(self):
         with (
