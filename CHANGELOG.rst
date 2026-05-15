@@ -11,6 +11,8 @@ Changelog
 
 * Dropped support for Python 3.10 and 3.11
 * Dropped support for Django 3.2 (EOL April 2024) and 4.2 (EOL April 2026)
+* Two properties on the ``Certificate`` model have been renamed: ``valid_from`` to
+  ``not_valid_before`` and ``expiry_date`` to ``not_valid_after``
 
 **New supported versions**
 
