@@ -2,6 +2,15 @@
 Changelog
 =========
 
+4.0.0
+=====
+
+*May 15, 2026*
+
+**Breaking changes**
+
+* Dropped support for django-privates < 4.0.
+
 3.0.0
 =====
 

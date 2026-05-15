@@ -1,7 +1,7 @@
 django-simple-certmanager
 =========================
 
-:Version: 3.0.0
+:Version: 4.0.0
 :Source: https://github.com/maykinmedia/django-simple-certmanager
 :Keywords: certificates
 
