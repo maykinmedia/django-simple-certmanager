@@ -24,6 +24,7 @@ Features
    :caption: Contents:
 
    quickstart
+   upload_csr
    commands
    CHANGELOG
 
